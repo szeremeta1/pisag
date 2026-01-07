@@ -111,10 +111,13 @@ class SoapySDRInterface(SDRInterface):
             for i in range(0, len(samples_cf32), chunk_size):
                 chunk = samples_cf32[i:i + chunk_size]
                 result = self.device.writeStream(stream, [chunk], len(chunk))
-                if isinstance(result, tuple):
-                    written = result[0]
-                else:
+                # Handle both integer return and StreamResult object
+                if hasattr(result, 'ret'):
+                    written = result.ret
+                elif isinstance(result, int):
                     written = result
+                else:
+                    written = len(chunk)  # Assume all written if unclear
                 total_written += written
                 if (i // chunk_size + 1) % 10 == 0 or i + chunk_size >= len(samples_cf32):
                     self.logger.info(f"      Progress: {total_written}/{len(samples_cf32)} samples ({100*total_written/len(samples_cf32):.1f}%)")
