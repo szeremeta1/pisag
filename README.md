@@ -1,4 +1,3 @@
-git clone <repository-url>
 # PISAG - POCSAG Pager Server
 
 Educational, hobby-friendly POCSAG pager transmission system for Raspberry Pi + HackRF One. PISAG provides a lightweight, extensible foundation for encoding and transmitting pager messages with a plugin-driven architecture, real-time web UI, and REST/SocketIO APIs. Built for learning and experimentation—use responsibly and legally.
@@ -28,7 +27,7 @@ Educational, hobby-friendly POCSAG pager transmission system for Raspberry Pi + 
 1) Install deps (Pi): `sudo apt-get update && sudo apt-get install -y python3 python3-venv python3-pip sqlite3 hackrf libhackrf-dev soapysdr-tools libsoapysdr-dev soapysdr-module-hackrf`
 2) Clone and install:
 ```bash
-git clone <repo-url> /opt/pisag
+git clone https://github.com/szeremeta1/pisag /opt/pisag
 cd /opt/pisag
 python3 -m venv venv
 source venv/bin/activate
