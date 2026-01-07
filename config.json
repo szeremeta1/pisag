@@ -1,0 +1,27 @@
+{
+  "system": {
+    "frequency": 439.9875,
+    "transmit_power": 10,
+    "if_gain": 40,
+    "sample_rate": 2.0,
+    "database_path": "pisag.db",
+    "log_level": "INFO"
+  },
+  "pocsag": {
+    "baud_rate": 512,
+    "deviation": 4.5
+  },
+  "hackrf": {
+    "device_index": 0,
+    "antenna_enable": true
+  },
+  "plugins": {
+    "pocsag_encoder": "pisag.plugins.encoders.pure_python.PurePythonEncoder",
+    "sdr_interface": "pisag.plugins.sdr.soapy_hackrf.SoapySDRInterface"
+  },
+  "web": {
+    "host": "0.0.0.0",
+    "port": 5000,
+    "debug": false
+  }
+}

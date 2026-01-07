@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PISAG - POCSAG Pager Server</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+    <header class="header">
+        <h1>PISAG - POCSAG Pager Server</h1>
+        <p>Raspberry Pi + HackRF One</p>
+    </header>
+
+    <div id="error-banner" class="error-banner hidden" role="alert"></div>
+
+    <nav class="tabs" aria-label="Main navigation">
+        <button class="tab-button active" data-tab="dashboard">Dashboard</button>
+        <button class="tab-button" data-tab="send">Send</button>
+        <button class="tab-button" data-tab="history">History</button>
+        <button class="tab-button" data-tab="settings">Settings</button>
+    </nav>
+
+    <main>
+        <section class="tab-content" data-tab-content="dashboard">
+            <div class="status-panel">
+                <div class="status-grid">
+                    <div class="status-item">
+                        <h3>HackRF Status</h3>
+                        <p data-element-id="hackrf-status" class="status-text">Unknown</p>
+                    </div>
+                    <div class="status-item">
+                        <h3>Frequency</h3>
+                        <p data-element-id="frequency">--</p>
+                    </div>
+                    <div class="status-item">
+                        <h3>Baud Rate</h3>
+                        <p data-element-id="baud-rate">--</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h4>Total Messages</h4>
+                    <p data-element-id="total-messages" class="stat-value">0</p>
+                </div>
+                <div class="stat-card">
+                    <h4>Success Rate</h4>
+                    <p data-element-id="success-rate" class="stat-value">0%</p>
+                </div>
+                <div class="stat-card">
+                    <h4>Today</h4>
+                    <p data-element-id="today-count" class="stat-value">0</p>
+                </div>
+                <div class="stat-card">
+                    <h4>Active Pagers</h4>
+                    <p data-element-id="active-pagers" class="stat-value">0</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>Recent Messages</h3>
+                </div>
+                <div class="table-wrapper">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Recipient</th>
+                                <th>Message</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody data-element-id="recent-messages-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>Analytics</h3>
+                </div>
+                <div data-element-id="analytics-placeholder" class="analytics-placeholder">Charts coming soon</div>
+            </div>
+        </section>
+
+        <section class="tab-content hidden" data-tab-content="send">
+            <div class="form-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Individual Message</h3>
+                    </div>
+                    <div class="card-body">
+                        <label for="individual-pager-select">Pager</label>
+                        <select id="individual-pager-select" data-element-id="individual-pager-select">
+                            <option value="">-- Select from address book --</option>
+                        </select>
+                        <p class="hint">Or enter manually</p>
+                        <input id="individual-ric-input" data-element-id="individual-ric-input" type="text" placeholder="7-digit POCSAG RIC address">
+
+                        <label for="individual-message-type">Message Type</label>
+                        <select id="individual-message-type" data-element-id="individual-message-type">
+                            <option value="alphanumeric">Alphanumeric</option>
+                            <option value="numeric">Numeric</option>
+                        </select>
+
+                        <label for="individual-message-text">Message</label>
+                        <textarea id="individual-message-text" data-element-id="individual-message-text" rows="4" placeholder="Max 80 characters for alphanumeric"></textarea>
+
+                        <button class="btn primary" data-element-id="send-individual-button">Send</button>
+
+                        <div class="progress hidden" data-element-id="individual-progress">
+                            <div class="progress-bar" style="width: 0%"></div>
+                            <span class="progress-text">Queued...</span>
+                        </div>
+                        <div class="success-message hidden" data-element-id="individual-success">Message sent successfully.</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Broadcast Message</h3>
+                    </div>
+                    <div class="card-body">
+                        <label>Pagers</label>
+                        <div class="checkbox-group" data-element-id="broadcast-pager-checkboxes"></div>
+                        <p class="hint">Or add RIC addresses manually</p>
+                        <input id="broadcast-ric-input" data-element-id="broadcast-ric-input" type="text" placeholder="Comma-separated RIC addresses">
+
+                        <label for="broadcast-message-type">Message Type</label>
+                        <select id="broadcast-message-type" data-element-id="broadcast-message-type">
+                            <option value="alphanumeric">Alphanumeric</option>
+                            <option value="numeric">Numeric</option>
+                        </select>
+
+                        <label for="broadcast-message-text">Message</label>
+                        <textarea id="broadcast-message-text" data-element-id="broadcast-message-text" rows="4"></textarea>
+
+                        <button class="btn primary" data-element-id="send-broadcast-button">Send Broadcast</button>
+
+                        <div class="progress hidden" data-element-id="broadcast-progress">
+                            <div class="progress-bar" style="width: 0%"></div>
+                            <span class="progress-text">Queued...</span>
+                        </div>
+                        <div class="success-message hidden" data-element-id="broadcast-success">Broadcast sent successfully.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="tab-content hidden" data-tab-content="history">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Message History</h3>
+                    <button class="btn secondary" data-element-id="refresh-history">Refresh</button>
+                </div>
+                <div class="table-wrapper">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Recipient(s)</th>
+                                <th>Message</th>
+                                <th>Type</th>
+                                <th>Frequency</th>
+                                <th>Duration</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody data-element-id="history-table-body"></tbody>
+                    </table>
+                </div>
+                <div class="pagination" data-element-id="pagination-controls"></div>
+            </div>
+        </section>
+
+        <section class="tab-content hidden" data-tab-content="settings">
+            <div class="card">
+                <div class="card-header">
+                    <h3>System Configuration</h3>
+                </div>
+                <div class="card-body grid-2">
+                    <div class="form-group">
+                        <label for="frequency-input">Frequency (MHz)</label>
+                        <input id="frequency-input" data-element-id="frequency-input" type="number" step="0.0001" placeholder="VHF/UHF range">
+                        <p class="hint">Use a valid frequency for your region.</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="baud-rate-select">Baud Rate</label>
+                        <select id="baud-rate-select" data-element-id="baud-rate-select">
+                            <option value="512">512 bps</option>
+                            <option value="1200">1200 bps</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="power-input">Power (dBm)</label>
+                        <input id="power-input" data-element-id="power-input" type="number" min="0" max="15" step="1" placeholder="HackRF One range: 0-15 dBm">
+                        <p class="hint">HackRF One range: 0-15 dBm.</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="gain-input">IF Gain (dB)</label>
+                        <input id="gain-input" data-element-id="gain-input" type="number" min="0" max="47" step="1" placeholder="IF gain: 0-47 dB">
+                        <p class="hint">IF gain: 0-47 dB.</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="sample-rate-input">Sample Rate (Hz)</label>
+                        <input id="sample-rate-input" data-element-id="sample-rate-input" type="number" step="1" placeholder="Typical: 2000000">
+                        <p class="hint">Typical: 2.0 MHz.</p>
+                    </div>
+                    <div class="form-group align-end">
+                        <button class="btn primary" data-element-id="save-system-config">Save Configuration</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>Address Book</h3>
+                </div>
+                <div class="card-body">
+                    <div class="table-wrapper">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>RIC Address</th>
+                                    <th>Notes</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody data-element-id="address-book-body"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="add-form">
+                        <input id="new-pager-name" data-element-id="new-pager-name" type="text" placeholder="Name">
+                        <input id="new-pager-ric" data-element-id="new-pager-ric" type="text" placeholder="RIC">
+                        <input id="new-pager-notes" data-element-id="new-pager-notes" type="text" placeholder="Notes">
+                        <button class="btn primary" data-element-id="add-pager-button">Add Pager</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script type="module" src="/static/js/api.js"></script>
+    <script type="module" src="/static/js/socket.js"></script>
+    <script type="module" src="/static/js/dashboard.js"></script>
+    <script type="module" src="/static/js/send.js"></script>
+    <script type="module" src="/static/js/history.js"></script>
+    <script type="module" src="/static/js/settings.js"></script>
+    <script type="module" src="/static/js/app.js"></script>
+</body>
+</html>

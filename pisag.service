@@ -1,0 +1,27 @@
+[Unit]
+Description=PISAG POCSAG Pager Server
+Documentation=https://github.com/<repo>/pisag
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/opt/pisag
+Environment="PATH=/opt/pisag/venv/bin:/usr/local/bin:/usr/bin:/bin"
+ExecStart=/opt/pisag/venv/bin/python -m pisag.app
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=pisag
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/pisag/logs /opt/pisag/pisag.db
+
+[Install]
+WantedBy=multi-user.target

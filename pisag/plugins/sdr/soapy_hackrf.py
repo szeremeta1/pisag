@@ -1,0 +1,89 @@
+"""SoapySDR-based SDR interface for HackRF One."""
+
+from __future__ import annotations
+
+import numpy as np
+from SoapySDR import SOAPY_SDR_CF32, SOAPY_SDR_TX, Device  # type: ignore
+
+from pisag.plugins.base import ConfigurationError, SDRInterface, TransmissionError
+from pisag.utils.logging import get_logger
+
+
+class SoapySDRInterface(SDRInterface):
+    """HackRF SDR interface using SoapySDR."""
+
+    def __init__(self) -> None:
+        self.device = None
+        self.logger = get_logger(__name__)
+        self._connected = False
+
+    def connect(self) -> bool:
+        try:
+            devices = Device.enumerate({"driver": "hackrf"})
+            if not devices:
+                self.logger.error("No HackRF devices found via SoapySDR")
+                return False
+            self.device = Device(devices[0])
+            self._connected = True
+            self.logger.info("HackRF connected via SoapySDR")
+            return True
+        except RuntimeError as exc:  # pragma: no cover - hardware path
+            self.logger.error("Failed to connect to HackRF", exc_info=True)
+            self._connected = False
+            self.device = None
+            return False
+
+    def disconnect(self) -> None:
+        self.device = None
+        self._connected = False
+        self.logger.info("HackRF disconnected")
+
+    def is_connected(self) -> bool:
+        return self._connected and self.device is not None
+
+    def configure(self, frequency: float, sample_rate: float, gain: float, power: float) -> None:
+        if not self.is_connected():
+            raise ConfigurationError("SDR not connected")
+        try:
+            freq_hz = frequency * 1e6
+            rate_hz = sample_rate * 1e6
+            self.device.setFrequency(SOAPY_SDR_TX, 0, freq_hz)
+            self.device.setSampleRate(SOAPY_SDR_TX, 0, rate_hz)
+            self.device.setGain(SOAPY_SDR_TX, 0, "IF", gain)
+            # Apply transmit power via the PA/VGA stage when available; fallback to generic gain.
+            try:
+                self.device.setGain(SOAPY_SDR_TX, 0, "PA", power)
+            except RuntimeError:
+                try:
+                    self.device.setGain(SOAPY_SDR_TX, 0, "VGA", power)
+                except RuntimeError:
+                    self.device.setGain(SOAPY_SDR_TX, 0, power)
+            self.device.writeSetting("tx_amp_enable", "true")
+            self.logger.info(
+                "SDR configured",
+                extra={
+                    "frequency_mhz": frequency,
+                    "sample_rate_mhz": sample_rate,
+                    "if_gain_db": gain,
+                    "tx_power_dbm": power,
+                },
+            )
+        except RuntimeError as exc:  # pragma: no cover - hardware path
+            self.logger.error("Failed to configure SDR", exc_info=True)
+            raise ConfigurationError(str(exc))
+
+    def transmit(self, iq_samples: np.ndarray) -> None:
+        if not self.is_connected():
+            raise TransmissionError("SDR not connected")
+        if not isinstance(iq_samples, np.ndarray) or not np.iscomplexobj(iq_samples):
+            raise TransmissionError("iq_samples must be a complex numpy array")
+        try:
+            stream = self.device.setupStream(SOAPY_SDR_TX, SOAPY_SDR_CF32)
+            self.device.activateStream(stream)
+            self.device.writeStream(stream, [iq_samples.astype(np.complex64)], len(iq_samples))
+            self.device.deactivateStream(stream)
+            self.device.closeStream(stream)
+            self.logger.info("Transmission completed", extra={"samples": iq_samples.size})
+        except RuntimeError as exc:  # pragma: no cover - hardware path
+            self.logger.error("Transmission failed", exc_info=True)
+            raise TransmissionError(str(exc))
