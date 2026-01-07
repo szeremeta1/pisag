@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from flask_socketio import join_room, leave_room
 
@@ -45,7 +45,7 @@ def _emit(event: str, payload: dict) -> None:
 def emit_message_queued(message_id: int, recipients_count: int) -> None:
     _emit(
         "message_queued",
-        {"message_id": message_id, "recipients": recipients_count, "timestamp": datetime.utcnow().isoformat()},
+        {"message_id": message_id, "recipients": recipients_count, "timestamp": datetime.now(timezone.utc).isoformat()},
     )
 
 

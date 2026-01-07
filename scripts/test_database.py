@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import text
 
@@ -64,7 +64,7 @@ def test_relationships(session) -> None:
 
 
 def test_query_helpers(session) -> None:
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     # Ensure at least one message in range
     message = Message(
         message_text="Range test",

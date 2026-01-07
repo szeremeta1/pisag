@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List
 
 from sqlalchemy import func, select
@@ -15,7 +15,7 @@ from pisag.utils.query_helpers import get_analytics_summary
 class AnalyticsService:
     def get_statistics(self, session: Session) -> Dict[str, Any]:
         summary = get_analytics_summary(session)
-        today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
         messages_today = session.execute(
             select(func.count(Message.id)).where(Message.timestamp >= today_start)
         ).scalar_one()
@@ -27,7 +27,7 @@ class AnalyticsService:
         return summary
 
     def get_messages_over_time(self, session: Session, hours: int = 24) -> List[Dict[str, Any]]:
-        start_time = datetime.utcnow() - timedelta(hours=hours)
+        start_time = datetime.now(timezone.utc) - timedelta(hours=hours)
         bucket = func.strftime("%Y-%m-%dT%H:00:00", Message.timestamp)
         rows = session.execute(
             select(bucket.label("bucket"), func.count(Message.id)).where(Message.timestamp >= start_time).group_by("bucket")

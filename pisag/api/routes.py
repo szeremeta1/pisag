@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from flask import Blueprint, current_app, jsonify, request
 from flask_socketio import SocketIO
@@ -42,7 +42,7 @@ def _get_socketio() -> SocketIO:
 def _error_response(message: str, status_code: int = 500, details: dict | None = None):
     payload = {
         "error": message,
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
     if details is not None:
         payload["details"] = details
@@ -82,7 +82,7 @@ def send_message():
         message = service.send_message(session, recipients, message_text, message_type, frequency, baud_rate)
         emit_message_queued(message.id, len(recipients))
         return (
-            jsonify({"status": "success", "message_id": message.id, "timestamp": datetime.utcnow().isoformat()}),
+            jsonify({"status": "success", "message_id": message.id, "timestamp": datetime.now(timezone.utc).isoformat()}),
             201,
         )
     except ValueError as exc:

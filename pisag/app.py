@@ -7,9 +7,9 @@ import logging
 import os
 import signal
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
 from flask_socketio import SocketIO
 
@@ -87,7 +87,7 @@ def create_app(config_path: str = "config.json") -> Flask:
     app.config["DEVICE_MONITOR"] = monitor
 
     def _json_error(message: str, status_code: int, details: dict | None = None):
-        payload = {"error": message, "timestamp": datetime.utcnow().isoformat()}
+        payload = {"error": message, "timestamp": datetime.now(timezone.utc).isoformat()}
         if details is not None:
             payload["details"] = details
         return jsonify(payload), status_code
@@ -102,6 +102,11 @@ def create_app(config_path: str = "config.json") -> Flask:
     def handle_not_found(error):  # noqa: ANN001
         logger.warning("Not found", extra=_error_context())
         return _json_error("Not Found", 404)
+
+    @app.route("/")
+    def index():
+        """Serve the main application page."""
+        return send_file(str(_STATIC_PATH / "index.html"))
 
     @app.errorhandler(400)
     def handle_bad_request(error):  # noqa: ANN001
