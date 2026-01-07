@@ -60,7 +60,7 @@ class SoapySDRInterface(SDRInterface):
                     self.device.setGain(SOAPY_SDR_TX, 0, power)
             self.device.writeSetting("tx_amp_enable", "true")
             self.logger.info(
-                "SDR configured",
+                "  ⚙ SDR configured for transmission",
                 extra={
                     "frequency_mhz": frequency,
                     "sample_rate_mhz": sample_rate,
@@ -68,6 +68,11 @@ class SoapySDRInterface(SDRInterface):
                     "tx_power_dbm": power,
                 },
             )
+            self.logger.info(f"    Frequency: {frequency} MHz ({freq_hz/1e6:.6f} MHz exact)")
+            self.logger.info(f"    Sample Rate: {sample_rate} MHz ({rate_hz/1e6:.6f} MHz exact)")
+            self.logger.info(f"    IF Gain: {gain} dB")
+            self.logger.info(f"    TX Power: {power} dBm")
+            self.logger.info(f"    TX Amp: Enabled")
         except RuntimeError as exc:  # pragma: no cover - hardware path
             self.logger.error("Failed to configure SDR", exc_info=True)
             raise ConfigurationError(str(exc))
@@ -80,10 +85,28 @@ class SoapySDRInterface(SDRInterface):
         try:
             stream = self.device.setupStream(SOAPY_SDR_TX, SOAPY_SDR_CF32)
             self.device.activateStream(stream)
-            self.device.writeStream(stream, [iq_samples.astype(np.complex64)], len(iq_samples))
+            samples_cf32 = iq_samples.astype(np.complex64)
+            actual_sr = self.device.getSampleRate(SOAPY_SDR_TX, 0)
+            actual_freq = self.device.getFrequency(SOAPY_SDR_TX, 0)
+            self.logger.info(
+                "  📡 Starting RF transmission",
+                extra={
+                    "sample_count": len(iq_samples),
+                    "sample_rate_hz": actual_sr,
+                    "frequency_hz": actual_freq,
+                    "duration_s": len(iq_samples) / actual_sr,
+                },
+            )
+            self.logger.info(f"    Samples: {len(iq_samples)}")
+            self.logger.info(f"    Frequency: {actual_freq/1e6:.6f} MHz")
+            self.logger.info(f"    Sample Rate: {actual_sr/1e6:.6f} MHz")
+            self.logger.info(f"    Duration: {len(iq_samples) / actual_sr:.3f} seconds")
+            self.logger.info("    ⏳ Writing samples to HackRF...")
+            result = self.device.writeStream(stream, [samples_cf32], len(iq_samples))
+            self.logger.info(f"    ✓ writeStream returned: {result}")
             self.device.deactivateStream(stream)
             self.device.closeStream(stream)
-            self.logger.info("Transmission completed", extra={"samples": iq_samples.size})
+            self.logger.info("  ✓ RF transmission completed")
         except RuntimeError as exc:  # pragma: no cover - hardware path
             self.logger.error("Transmission failed", exc_info=True)
             raise TransmissionError(str(exc))

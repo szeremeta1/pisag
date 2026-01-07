@@ -6,6 +6,8 @@ import threading
 import time
 from typing import Any, Dict, Optional
 
+import numpy as np
+
 from pisag.config import get_config
 from pisag.models import Message, TransmissionLog
 from pisag.models.base import get_db_session
@@ -97,6 +99,25 @@ class TransmissionWorker:
         gain = float(sys_cfg.get("if_gain", 40))
         power = float(sys_cfg.get("transmit_power", 10))
 
+        self.logger.info("═" * 65)
+        self.logger.info(
+            "▶ STARTING TRANSMISSION REQUEST",
+            extra={
+                "message_id": message_id,
+                "recipient_count": len(recipients),
+                "message_length": len(message_text),
+                "message_type": message_type,
+                "frequency_mhz": frequency,
+                "baud_rate": baud_rate,
+                "sample_rate_mhz": sample_rate,
+                "if_gain_db": gain,
+                "tx_power_dbm": power,
+            },
+        )
+        self.logger.info(f"Message: {repr(message_text)}")
+        for idx, r in enumerate(recipients, 1):
+            self.logger.info(f"  → Recipient {idx}: RIC {r.get('ric')}")
+
         start_time = time.time()
         details = f"Encoding started (baud={baud_rate}, type={message_type}, len={len(message_text)})"
         self._update_message_status(message_id, "encoding")
@@ -104,9 +125,23 @@ class TransmissionWorker:
         emit_encoding_started(message_id)
 
         try:
-            for recipient in recipients:
+            for idx, recipient in enumerate(recipients, 1):
                 ric = recipient.get("ric")
+                self.logger.info(
+                    f"Processing recipient {idx}/{len(recipients)}: RIC {ric}",
+                    extra={"message_id": message_id, "ric": ric, "recipient_index": idx},
+                )
                 iq_samples = self.encoder.encode(ric, message_text, message_type, baud_rate)
+                self.logger.info(
+                    "Encoded samples generated",
+                    extra={
+                        "message_id": message_id,
+                        "ric": ric,
+                        "sample_count": len(iq_samples),
+                        "sample_dtype": str(iq_samples.dtype),
+                        "is_complex": np.iscomplexobj(iq_samples),
+                    },
+                )
                 self._update_message_status(message_id, "transmitting")
                 self._create_log_entry(
                     message_id,
@@ -114,8 +149,11 @@ class TransmissionWorker:
                     f"Transmitting to RIC {ric} at {frequency} MHz (sr={sample_rate} MHz, gain={gain} dB, power={power} dBm)",
                 )
                 emit_transmitting(message_id, ric)
+                self.logger.info("Configuring SDR for transmission")
                 self.sdr.configure(frequency, sample_rate, gain, power)
+                self.logger.info("Starting SDR transmission")
                 self.sdr.transmit(iq_samples)
+                self.logger.info(f"Transmission completed for RIC {ric}")
 
             duration = time.time() - start_time
             self._update_message_status(message_id, "success")
@@ -123,8 +161,13 @@ class TransmissionWorker:
             emit_transmission_complete(message_id, duration)
             SystemStatus.record_transmission()
             self.logger.info(
-                "Transmission complete",
-                extra={"message_id": message_id, "duration": duration, "recipients": len(recipients)},
+                "✓ TRANSMISSION COMPLETE - Message sent successfully",
+                extra={
+                    "message_id": message_id,
+                    "duration_s": round(duration, 2),
+                    "recipients": len(recipients),
+                    "frequency_mhz": frequency,
+                },
             )
         except (EncodingError, ConfigurationError, TransmissionError) as exc:
             self._handle_error(message_id, recipients, exc)

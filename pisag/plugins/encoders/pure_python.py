@@ -75,9 +75,13 @@ class PurePythonEncoder(POCSAGEncoder):
             ric_int = int(ric)
 
             self.logger.info(
-                "Starting POCSAG encode",
-                extra={"ric": ric, "type": message_type, "baud": baud_rate, "len": len(message)},
+                "  ⚙ Encoding POCSAG message",
+                extra={"ric": ric, "type": message_type, "baud": baud_rate, "message_length": len(message)},
             )
+            self.logger.info(f"    RIC: {ric} (decimal: {ric_int})")
+            self.logger.info(f"    Type: {message_type}")
+            self.logger.info(f"    Baud: {baud_rate}")
+            self.logger.info(f"    Message: {repr(message)}")
 
             address_cw = self._generate_address_codeword(ric_int)
             msg_codewords = (
@@ -90,13 +94,15 @@ class PurePythonEncoder(POCSAGEncoder):
             samples = self._modulate_fsk(bitstream, baud_rate)
 
             self.logger.info(
-                "Completed POCSAG encode",
+                "  ✓ Encoding complete",
                 extra={
-                    "samples": samples.size,
-                    "duration_s": samples.size / self.sample_rate_hz,
+                    "sample_count": samples.size,
+                    "duration_s": round(samples.size / self.sample_rate_hz, 3),
                     "codewords": len(batch_codewords),
+                    "sample_type": str(samples.dtype),
                 },
             )
+            self.logger.info(f"    Generated {samples.size} samples ({samples.size / self.sample_rate_hz:.3f}s @ {self.sample_rate_hz/1e6:.1f} MHz)")
             return samples
         except Exception as exc:  # pragma: no cover - passthrough
             self.logger.error("POCSAG encoding failed", exc_info=True)
