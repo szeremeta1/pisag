@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 import numpy as np
 from SoapySDR import SOAPY_SDR_CF32, SOAPY_SDR_TX, Device  # type: ignore
 
@@ -122,9 +123,16 @@ class SoapySDRInterface(SDRInterface):
                 if (i // chunk_size + 1) % 10 == 0 or i + chunk_size >= len(samples_cf32):
                     self.logger.info(f"      Progress: {total_written}/{len(samples_cf32)} samples ({100*total_written/len(samples_cf32):.1f}%)")
             
-            self.logger.info(f"    ✓ Wrote {total_written}/{len(samples_cf32)} samples")
+            # Add a short zero tail to ensure the device drains its FIFO fully
+            tail = np.zeros(min(65536, int(actual_sr * 0.02)), dtype=np.complex64)
+            if tail.size:
+                self.device.writeStream(stream, [tail], len(tail))
+
+            self.logger.info(f"    ✓ Wrote {total_written}/{len(samples_cf32)} samples (+ tail {tail.size})")
             self.device.deactivateStream(stream)
             self.device.closeStream(stream)
+            # Small wait to allow LED/PA to settle off
+            time.sleep(0.02)
             self.logger.info("  ✓ RF transmission completed")
         except RuntimeError as exc:  # pragma: no cover - hardware path
             self.logger.error("Transmission failed", exc_info=True)

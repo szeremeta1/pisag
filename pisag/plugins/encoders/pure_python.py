@@ -51,6 +51,7 @@ class PurePythonEncoder(POCSAGEncoder):
         pocsag_cfg = cfg.get("pocsag", {})
         self.sample_rate_hz = float(system_cfg.get("sample_rate", 2.0)) * 1_000_000.0
         self.deviation_hz = float(pocsag_cfg.get("deviation", 4.5)) * 1_000.0
+        self.invert_fsk = bool(pocsag_cfg.get("invert", False))
         self.logger = get_logger(__name__)
 
     # Public API -----------------------------------------------------------
@@ -288,20 +289,39 @@ class PurePythonEncoder(POCSAGEncoder):
 
     # Modulation ----------------------------------------------------------
     def _modulate_fsk(self, bits: List[int], baud_rate: int) -> np.ndarray:
-        samples_per_bit = int(self.sample_rate_hz / baud_rate)
-        total_samples = samples_per_bit * len(bits)
+        # Use fractional samples-per-bit with error accumulation to avoid drift
+        spb_float = self.sample_rate_hz / float(baud_rate)
+        spb_base = int(spb_float)
+        spb_err = spb_float - spb_base
 
+        total_samples = int(round(spb_float * len(bits)))
         samples = np.empty(total_samples, dtype=np.complex64)
         phase = 0.0
         idx = 0
         two_pi_over_sr = 2.0 * math.pi / self.sample_rate_hz
+        acc = 0.0
 
         for bit in bits:
-            freq = self.deviation_hz if bit else -self.deviation_hz
+            # Allow polarity inversion if configured
+            if self.invert_fsk:
+                freq = -self.deviation_hz if bit else self.deviation_hz
+            else:
+                freq = self.deviation_hz if bit else -self.deviation_hz
+
+            n = spb_base
+            acc += spb_err
+            if acc >= 1.0:
+                n += 1
+                acc -= 1.0
+
             phase_increment = two_pi_over_sr * freq
-            for _ in range(samples_per_bit):
+            for _ in range(n):
                 phase += phase_increment
                 samples[idx] = np.exp(1j * phase)
                 idx += 1
+
+        # In rare rounding cases, idx may be off by 1; trim if necessary
+        if idx != total_samples:
+            samples = samples[:idx]
 
         return samples
