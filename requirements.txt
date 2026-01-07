@@ -5,12 +5,14 @@ Flask-SQLAlchemy==3.1.1
 Flask-CORS==4.0.0
 
 # Database
-SQLAlchemy==2.0.23
+SQLAlchemy>=2.0.45
 alembic==1.13.0
 
 # SDR and Signal Processing
-SoapySDR==0.8.1
-numpy==1.24.3
+# SoapySDR should be installed via system package manager (apt, brew, etc.)
+# sudo apt-get install libsoapysdr-dev python3-soapysdr  # on Ubuntu/Debian
+# brew install soapysdr  # on macOS
+numpy>=2.4.0
 
 # Async Support
 eventlet==0.33.3

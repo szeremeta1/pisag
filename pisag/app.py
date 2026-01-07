@@ -62,7 +62,6 @@ def create_app(config_path: str = "config.json") -> Flask:
     _socketio.init_app(
         app,
         cors_allowed_origins="*",
-        async_mode="eventlet",
         ping_timeout=20,
         ping_interval=25,
         logger=app.debug,
