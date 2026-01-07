@@ -11,7 +11,7 @@ from sqlalchemy.orm import selectinload
 
 from pisag.api.serializers import serialize_config, serialize_message, serialize_pager
 from pisag.api.socketio import emit_message_queued, emit_status_update
-from pisag.models import Message
+from pisag.models import Message, MessageRecipient
 from pisag.services.analytics_service import AnalyticsService
 from pisag.services.config_service import ConfigService
 from pisag.services.message_service import MessageService
@@ -113,7 +113,7 @@ def list_messages():
     try:
         messages = (
             session.query(Message)
-            .options(selectinload(Message.recipients).selectinload("pager"))
+            .options(selectinload(Message.recipients).selectinload(MessageRecipient.pager))
             .order_by(Message.timestamp.desc())
             .offset(offset)
             .limit(limit)
