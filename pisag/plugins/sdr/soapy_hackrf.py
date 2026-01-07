@@ -101,9 +101,25 @@ class SoapySDRInterface(SDRInterface):
             self.logger.info(f"    Frequency: {actual_freq/1e6:.6f} MHz")
             self.logger.info(f"    Sample Rate: {actual_sr/1e6:.6f} MHz")
             self.logger.info(f"    Duration: {len(iq_samples) / actual_sr:.3f} seconds")
-            self.logger.info("    ⏳ Writing samples to HackRF...")
-            result = self.device.writeStream(stream, [samples_cf32], len(iq_samples))
-            self.logger.info(f"    ✓ writeStream returned: {result}")
+            self.logger.info("    ⏳ Writing samples to HackRF in chunks...")
+            
+            # Write samples in chunks to ensure all data is transmitted
+            total_written = 0
+            chunk_size = 131072  # Write in 128K chunks
+            num_chunks = (len(samples_cf32) + chunk_size - 1) // chunk_size
+            
+            for i in range(0, len(samples_cf32), chunk_size):
+                chunk = samples_cf32[i:i + chunk_size]
+                result = self.device.writeStream(stream, [chunk], len(chunk))
+                if isinstance(result, tuple):
+                    written = result[0]
+                else:
+                    written = result
+                total_written += written
+                if (i // chunk_size + 1) % 10 == 0 or i + chunk_size >= len(samples_cf32):
+                    self.logger.info(f"      Progress: {total_written}/{len(samples_cf32)} samples ({100*total_written/len(samples_cf32):.1f}%)")
+            
+            self.logger.info(f"    ✓ Wrote {total_written}/{len(samples_cf32)} samples")
             self.device.deactivateStream(stream)
             self.device.closeStream(stream)
             self.logger.info("  ✓ RF transmission completed")
