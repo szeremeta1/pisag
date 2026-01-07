@@ -1,21 +1,21 @@
 # Web Framework
-Flask==3.1.5
-Flask-SocketIO==5.3.7
-Flask-SQLAlchemy==3.2.0
-Flask-CORS==4.0.0
+Flask==3.1.2
+Flask-SocketIO==5.6.0
+Flask-SQLAlchemy==3.1.1
+Flask-CORS==6.0.2
 
 # Database
-SQLAlchemy==2.1.5
-alembic==1.14.2
+SQLAlchemy==2.0.45
+alembic==1.17.2
 
 # SDR and Signal Processing
 # SoapySDR should be installed via system package manager (apt, brew, etc.)
 # sudo apt-get install libsoapysdr-dev python3-soapysdr  # on Ubuntu/Debian
 # brew install soapysdr  # on macOS
-numpy==2.4.1
+numpy==2.4.0
 
 # Async Support
-eventlet==0.36.3
+eventlet
 
 # Utilities
-python-dotenv==1.0.1
+python-dotenv==1.2.1
