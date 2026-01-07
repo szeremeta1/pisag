@@ -150,14 +150,23 @@ class PurePythonEncoder(POCSAGEncoder):
 
     # Codeword construction ------------------------------------------------
     def _generate_address_codeword(self, ric: int) -> int:
-        address = (ric >> 3) & 0x3FFFF  # 18-bit address
-        function = (ric >> 1) & 0x3  # two function bits
+        address = (ric >> 3) & 0x3FFFF  # 18-bit address (RIC // 8)
+        function = ric & 0x3  # two function bits (RIC & 0x3)
         data = (address << 3) | (function << 1) | 0  # LSB flag = 0 for address
         parity = self._calculate_bch_parity(data, 21)
         cw31 = (data << 10) | parity
         even = self._calculate_even_parity(cw31)
         codeword = (cw31 << 1) | even
-        self.logger.debug("Address codeword generated", extra={"ric": ric, "codeword": hex(codeword)})
+        self.logger.debug(
+            "Address codeword generated",
+            extra={
+                "ric": ric,
+                "address": address,
+                "function": function,
+                "slot": (ric & 0x7) * 2,
+                "codeword": hex(codeword),
+            },
+        )
         return codeword
 
     def _encode_alphanumeric(self, message: str) -> List[int]:
