@@ -160,7 +160,7 @@ class PurePythonEncoder(POCSAGEncoder):
         parity = self._calculate_bch_parity(data, 21)
         cw31 = (data << 10) | parity
         even = self._calculate_even_parity(cw31)
-        codeword = (cw31 << 1) | even
+        codeword = cw31 | even  # Parity in bit 0, no left shift
         self.logger.debug(
             "Address codeword generated",
             extra={
@@ -197,7 +197,7 @@ class PurePythonEncoder(POCSAGEncoder):
             parity = self._calculate_bch_parity(data_val, 21)
             cw31 = (data_val << 10) | parity
             even = self._calculate_even_parity(cw31)
-            codewords.append((cw31 << 1) | even)
+            codewords.append(cw31 | even)  # Parity in bit 0, no left shift
 
         self.logger.debug(
             "Alphanumeric message encoded",
@@ -247,7 +247,7 @@ class PurePythonEncoder(POCSAGEncoder):
             parity = self._calculate_bch_parity(data_val, 21)
             cw31 = (data_val << 10) | parity
             even = self._calculate_even_parity(cw31)
-            codewords.append((cw31 << 1) | even)
+            codewords.append(cw31 | even)  # Parity in bit 0, no left shift
 
         self.logger.debug(
             "Numeric message encoded",
