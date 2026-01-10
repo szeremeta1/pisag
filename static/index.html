@@ -38,6 +38,18 @@
                         <h3>Baud Rate</h3>
                         <p data-element-id="baud-rate">--</p>
                     </div>
+                    <div class="status-item">
+                        <h3>Transmit Power</h3>
+                        <p data-element-id="transmit-power">--</p>
+                    </div>
+                    <div class="status-item">
+                        <h3>IF Gain</h3>
+                        <p data-element-id="if-gain">--</p>
+                    </div>
+                    <div class="status-item">
+                        <h3>Sample Rate</h3>
+                        <p data-element-id="sample-rate">--</p>
+                    </div>
                 </div>
             </div>
 
@@ -57,6 +69,14 @@
                 <div class="stat-card">
                     <h4>Active Pagers</h4>
                     <p data-element-id="active-pagers" class="stat-value">0</p>
+                </div>
+                <div class="stat-card">
+                    <h4>Queue Size</h4>
+                    <p data-element-id="queue-size" class="stat-value">0</p>
+                </div>
+                <div class="stat-card">
+                    <h4>Worker Status</h4>
+                    <p data-element-id="worker-status" class="stat-value status-text">--</p>
                 </div>
             </div>
 
@@ -81,9 +101,28 @@
 
             <div class="card">
                 <div class="card-header">
-                    <h3>Analytics</h3>
+                    <h3>System Information</h3>
                 </div>
-                <div data-element-id="analytics-placeholder" class="analytics-placeholder">Charts coming soon</div>
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">POCSAG Deviation:</span>
+                            <span data-element-id="deviation" class="info-value">--</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">FSK Polarity:</span>
+                            <span data-element-id="fsk-polarity" class="info-value">--</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Encoder:</span>
+                            <span data-element-id="encoder" class="info-value">--</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">SDR Interface:</span>
+                            <span data-element-id="sdr-interface" class="info-value">--</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -207,9 +246,16 @@
                         <p class="hint">IF gain: 0-47 dB.</p>
                     </div>
                     <div class="form-group">
-                        <label for="sample-rate-input">Sample Rate (Hz)</label>
-                        <input id="sample-rate-input" data-element-id="sample-rate-input" type="number" step="1" placeholder="Typical: 2000000">
+                        <label for="sample-rate-input">Sample Rate (MHz)</label>
+                        <input id="sample-rate-input" data-element-id="sample-rate-input" type="number" step="0.1" min="2" max="20" placeholder="Typical: 2.0">
                         <p class="hint">Typical: 2.0 MHz.</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="invert-fsk-checkbox">
+                            <input id="invert-fsk-checkbox" data-element-id="invert-fsk-checkbox" type="checkbox">
+                            Invert FSK (for PDW compatibility)
+                        </label>
+                        <p class="hint">Enable if using RTL-SDR with PDW Paging Decoder.</p>
                     </div>
                     <div class="form-group align-end">
                         <button class="btn primary" data-element-id="save-system-config">Save Configuration</button>

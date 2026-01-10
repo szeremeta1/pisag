@@ -20,6 +20,7 @@ _DEFAULT_CONFIG: Dict[str, Any] = {
     "pocsag": {
         "baud_rate": 512,
         "deviation": 4.5,
+        "invert": True,
     },
     "hackrf": {
         "device_index": 0,

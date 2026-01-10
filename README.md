@@ -11,6 +11,7 @@ Educational, hobby-friendly POCSAG pager transmission system for Raspberry Pi + 
 - SQLite + Alembic migrations; transmission logs and analytics
 - Rotating file logging with optional console output
 - Designed for Raspberry Pi 3/4 in constrained environments
+- **PDW Paging Decoder compatible** - FSK polarity matches RTL-SDR decoder expectations
 
 ## Hardware Requirements
 - Raspberry Pi 3 or newer

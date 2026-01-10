@@ -93,7 +93,7 @@ body {
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
   margin: 16px 0;
 }
@@ -115,6 +115,30 @@ body {
 .stat-value {
   font-size: 22px;
   font-weight: 700;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+
+.info-label {
+  font-weight: 600;
+  color: #34495e;
+}
+
+.info-value {
+  color: #2c3e50;
+  font-family: monospace;
 }
 
 .card {
@@ -370,7 +394,8 @@ textarea {
   .stats-grid,
   .form-grid,
   .grid-2,
-  .add-form {
+  .add-form,
+  .info-grid {
     grid-template-columns: 1fr;
   }
 

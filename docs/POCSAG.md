@@ -31,6 +31,11 @@ BCH(31,21) polynomial 0x769 used for parity; implemented via polynomial division
 ## Modulation
 2-FSK with ±4.5 kHz deviation; bit 1 = +deviation, bit 0 = -deviation. Implemented in `_modulate_fsk` in the pure Python encoder.
 
+### FSK Polarity
+The POCSAG standard traditionally specifies bit 1 = mark (lower frequency) and bit 0 = space (higher frequency). However, many modern decoders including **PDW Paging Decoder** used with RTL-SDR expect the opposite polarity: bit 1 = higher frequency, bit 0 = lower frequency.
+
+PISAG defaults to **inverted FSK polarity** (`invert: true` in config) to ensure compatibility with PDW and similar software. This can be toggled in the Settings tab of the Web UI or in the configuration file if you need to match a specific receiver's expectations.
+
 ## Resources
 - POCSAG specs and amateur radio paging references
 - GNU Radio examples (gr-pocsag, gr-mixalot)

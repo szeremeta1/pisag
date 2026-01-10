@@ -7,12 +7,20 @@ const elements = {
   hackrfStatus: null,
   frequency: null,
   baudRate: null,
+  transmitPower: null,
+  ifGain: null,
+  sampleRate: null,
   totalMessages: null,
   successRate: null,
   todayCount: null,
   activePagers: null,
+  queueSize: null,
+  workerStatus: null,
   recentMessagesBody: null,
-  analyticsPlaceholder: null
+  deviation: null,
+  fskPolarity: null,
+  encoder: null,
+  sdrInterface: null
 };
 
 function reportError(message) {
@@ -38,8 +46,47 @@ function renderStatus(statusData) {
   elements.hackrfStatus.classList.toggle('status-success', !!connected);
   elements.hackrfStatus.classList.toggle('status-failed', !connected);
 
-  elements.frequency.textContent = formatFrequency(statusData?.frequency_mhz || statusData?.frequency);
+  const frequency = statusData?.frequency ?? statusData?.frequency_mhz;
+  elements.frequency.textContent = formatFrequency(frequency);
   elements.baudRate.textContent = statusData?.baud_rate || '--';
+  
+  // Display additional system information
+  if (statusData?.transmit_power !== undefined) {
+    elements.transmitPower.textContent = `${statusData.transmit_power} dBm`;
+  }
+  if (statusData?.if_gain !== undefined) {
+    elements.ifGain.textContent = `${statusData.if_gain} dB`;
+  }
+  if (statusData?.sample_rate !== undefined) {
+    elements.sampleRate.textContent = `${statusData.sample_rate} MHz`;
+  }
+  if (statusData?.queue_size !== undefined) {
+    elements.queueSize.textContent = statusData.queue_size;
+  }
+  
+  // Worker status
+  const workerRunning = statusData?.worker_running;
+  if (workerRunning !== undefined) {
+    elements.workerStatus.textContent = workerRunning ? 'Running' : 'Stopped';
+    elements.workerStatus.classList.toggle('status-success', !!workerRunning);
+    elements.workerStatus.classList.toggle('status-failed', !workerRunning);
+  }
+  
+  // System configuration details
+  if (statusData?.deviation !== undefined) {
+    elements.deviation.textContent = `${statusData.deviation} kHz`;
+  }
+  if (statusData?.invert !== undefined) {
+    elements.fskPolarity.textContent = statusData.invert ? 'Inverted (PDW Compatible)' : 'Normal';
+  }
+  if (statusData?.encoder) {
+    const encoderName = statusData.encoder.split('.').pop();
+    elements.encoder.textContent = encoderName;
+  }
+  if (statusData?.sdr_interface) {
+    const sdrName = statusData.sdr_interface.split('.').pop();
+    elements.sdrInterface.textContent = sdrName;
+  }
 }
 
 function renderStats(analytics) {
@@ -122,12 +169,20 @@ export async function init() {
   elements.hackrfStatus = el('hackrf-status');
   elements.frequency = el('frequency');
   elements.baudRate = el('baud-rate');
+  elements.transmitPower = el('transmit-power');
+  elements.ifGain = el('if-gain');
+  elements.sampleRate = el('sample-rate');
   elements.totalMessages = el('total-messages');
   elements.successRate = el('success-rate');
   elements.todayCount = el('today-count');
   elements.activePagers = el('active-pagers');
+  elements.queueSize = el('queue-size');
+  elements.workerStatus = el('worker-status');
   elements.recentMessagesBody = el('recent-messages-body');
-  elements.analyticsPlaceholder = el('analytics-placeholder');
+  elements.deviation = el('deviation');
+  elements.fskPolarity = el('fsk-polarity');
+  elements.encoder = el('encoder');
+  elements.sdrInterface = el('sdr-interface');
 
   bindSockets();
   await refresh();

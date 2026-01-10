@@ -9,7 +9,8 @@
   },
   "pocsag": {
     "baud_rate": 512,
-    "deviation": 4.5
+    "deviation": 4.5,
+    "invert": true
   },
   "hackrf": {
     "device_index": 0,

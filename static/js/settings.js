@@ -15,6 +15,7 @@ const elements = {
   power: null,
   gain: null,
   sampleRate: null,
+  invertFsk: null,
   saveButton: null,
   addressBookBody: null,
   newPagerName: null,
@@ -38,11 +39,11 @@ function showSuccess(message) {
   window.dispatchEvent(new CustomEvent('pisag:toast', { detail: message }));
 }
 
-function validateConfig(values) {
-  const frequency = values.frequency_mhz ?? values.frequency;
-  const power = values.power_dbm ?? values.power;
-  const gain = values.gain_db ?? values.gain;
-  const sampleRate = values.sample_rate ?? values.sampleRate;
+function validateConfig(systemValues) {
+  const frequency = systemValues.frequency;
+  const power = systemValues.transmit_power;
+  const gain = systemValues.if_gain;
+  const sampleRate = systemValues.sample_rate;
 
   if (frequency <= 0 || frequency < 100 || frequency > 1000) {
     throw new Error('Frequency should be between 100 and 1000 MHz.');
@@ -74,11 +75,14 @@ function validatePager({ name, ric }) {
 async function loadConfig() {
   try {
     const config = await getConfig();
-    elements.frequency.value = config.frequency_mhz ?? config.frequency ?? '';
-    elements.baudRate.value = config.baud_rate ?? '';
-    elements.power.value = config.power_dbm ?? config.power ?? '';
-    elements.gain.value = config.gain_db ?? config.gain ?? '';
-    elements.sampleRate.value = config.sample_rate ?? '';
+    const system = config.system || {};
+    const pocsag = config.pocsag || {};
+    elements.frequency.value = system.frequency ?? '';
+    elements.baudRate.value = pocsag.baud_rate ?? '';
+    elements.power.value = system.transmit_power ?? '';
+    elements.gain.value = system.if_gain ?? '';
+    elements.sampleRate.value = system.sample_rate ?? '';
+    elements.invertFsk.checked = pocsag.invert ?? false;
   } catch (err) {
     reportError(err.message || 'Failed to load configuration');
   }
@@ -113,13 +117,18 @@ async function loadPagers() {
 async function saveConfig() {
   try {
     const values = {
-      frequency_mhz: Number(elements.frequency.value),
-      baud_rate: Number(elements.baudRate.value),
-      power_dbm: Number(elements.power.value),
-      gain_db: Number(elements.gain.value),
-      sample_rate: Number(elements.sampleRate.value)
+      system: {
+        frequency: Number(elements.frequency.value),
+        transmit_power: Number(elements.power.value),
+        if_gain: Number(elements.gain.value),
+        sample_rate: Number(elements.sampleRate.value)
+      },
+      pocsag: {
+        baud_rate: Number(elements.baudRate.value),
+        invert: elements.invertFsk.checked
+      }
     };
-    validateConfig(values);
+    validateConfig(values.system);
     await updateConfig(values);
     showSuccess('Configuration saved');
   } catch (err) {
@@ -213,6 +222,7 @@ export async function init() {
   elements.power = el('power-input');
   elements.gain = el('gain-input');
   elements.sampleRate = el('sample-rate-input');
+  elements.invertFsk = el('invert-fsk-checkbox');
   elements.saveButton = el('save-system-config');
   elements.addressBookBody = el('address-book-body');
   elements.newPagerName = el('new-pager-name');
