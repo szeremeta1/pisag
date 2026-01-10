@@ -12,8 +12,9 @@
 
 ## PDW Paging Decoder Not Receiving
 - Symptoms: RTL-SDR + PDW shows no decodes; frequency is correct.
-- Checks: FSK polarity setting; frequency accuracy; RTL-SDR tuning; PDW configuration.
+- Checks: FSK polarity setting; frequency accuracy; RTL-SDR tuning; PDW configuration; software version.
 - Fix: Enable "Invert FSK" in Settings tab (should be on by default); verify frequency matches exactly; check RTL-SDR gain settings; ensure PDW is set to POCSAG 512 baud mode.
+- Note: Versions prior to the LSB-first encoding fix transmitted messages with incorrect bit ordering, making them undecodable. Ensure you're running the latest version with LSB-first encoding per POCSAG standard (ITU-R M.584).
 
 ## Web Interface Not Loading
 - Symptoms: Cannot reach `http://<ip>:5000`.
