@@ -12,7 +12,7 @@ Educational, hobby-friendly POCSAG pager transmission system for Raspberry Pi + 
 - Rotating file logging with optional console output
 - Designed for Raspberry Pi 3/4 in constrained environments
 - **✅ Standard-compliant POCSAG encoding** - Verified against UniPager reference implementation
-- **PDW Paging Decoder compatible** - LSB-first encoding per POCSAG standard (ITU-R M.584) with correct codeword generation
+- **PDW Paging Decoder compatible** - LSB-first encoding per POCSAG standard (ITU-R M.584) with correct codeword generation and FSK polarity configured for modern decoders
 
 ## Hardware Requirements
 - Raspberry Pi 3 or newer
@@ -67,6 +67,7 @@ install.sh            # Automated install script
 - [Troubleshooting](docs/TROUBLESHOOTING.md)
 - [POCSAG Protocol](docs/POCSAG.md)
 - [UniPager Integration](docs/UNIPAGER_INTEGRATION.md) - Fixed encoding & integration guide
+- [External Projects Analysis](docs/EXTERNAL_PROJECTS_ANALYSIS.md) - Comparison with gr-mixalot, gr-pocsag, pocsag-tool, UniPager
 - [Legal / Regulatory](docs/LEGAL.md)
 - [API Reference](docs/API.md)
 - [Database](docs/DATABASE.md)
