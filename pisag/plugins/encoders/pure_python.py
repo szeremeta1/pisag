@@ -4,13 +4,17 @@ This module implements the POCSAG protocol end-to-end in Python:
 
 - Input validation for RIC addressing, message content, and baud rate
 - BCH(31,21) forward error correction with even parity
-- Address and message codeword construction
+- Address and message codeword construction with LSB-first bit ordering
 - Preamble and batch framing with idle fill codewords
 - 2-FSK modulation to complex IQ samples for transmission
 
 The implementation favors readability and learning value over micro-optimizations
 while still using precomputed constants and vectorized NumPy operations where
 useful. See the `encode` docstring for a walkthrough of the full pipeline.
+
+IMPORTANT: Alphanumeric and numeric messages are encoded LSB-first per the POCSAG
+standard (ITU-R M.584), ensuring compatibility with PDW Paging Decoder and other
+standard POCSAG receivers.
 """
 
 from __future__ import annotations
@@ -173,12 +177,12 @@ class PurePythonEncoder(POCSAGEncoder):
         bits: List[int] = []
         for ch in message:
             val = ord(ch) & 0x7F
-            for shift in range(6, -1, -1):  # MSB-first 7 bits
+            for shift in range(0, 7):  # LSB-first 7 bits (POCSAG standard)
                 bits.append((val >> shift) & 1)
 
         # Pad with spaces (0x20) to align to 20-bit blocks
         while len(bits) % 20 != 0:
-            for shift in range(6, -1, -1):
+            for shift in range(0, 7):
                 bits.append((0x20 >> shift) & 1)
                 if len(bits) % 20 == 0:
                     break
@@ -223,12 +227,12 @@ class PurePythonEncoder(POCSAGEncoder):
         bits: List[int] = []
         for ch in message:
             val = bcd_map[ch]
-            for shift in range(3, -1, -1):  # 4-bit BCD, MSB-first
+            for shift in range(0, 4):  # 4-bit BCD, LSB-first (POCSAG standard)
                 bits.append((val >> shift) & 1)
 
         # Pad with spaces (0xB) to align to 20-bit blocks (5 digits per block)
         while len(bits) % 20 != 0:
-            for shift in range(3, -1, -1):
+            for shift in range(0, 4):
                 bits.append((0xB >> shift) & 1)
                 if len(bits) % 20 == 0:
                     break
