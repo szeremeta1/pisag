@@ -25,8 +25,8 @@ POCSAG (Post Office Code Standardisation Advisory Group) is a classic pager prot
 BCH(31,21) polynomial 0x769 used for parity; implemented via polynomial division in [pisag/plugins/encoders/pure_python.py](../pisag/plugins/encoders/pure_python.py).
 
 ## Message Encoding
-- **Alphanumeric**: 7-bit ASCII packed into 20-bit blocks, padded with spaces.
-- **Numeric**: 4-bit BCD digits (0-9, space, U, -, [, ]) packed into 20-bit blocks.
+- **Alphanumeric**: 7-bit ASCII packed LSB-first into 20-bit blocks, padded with spaces. Each character's bits are transmitted from bit 0 (LSB) to bit 6 (MSB) per POCSAG standard.
+- **Numeric**: 4-bit BCD digits (0-9, space, U, -, [, ]) packed LSB-first into 20-bit blocks. Each digit's bits are transmitted from bit 0 (LSB) to bit 3 (MSB).
 
 ## Modulation
 2-FSK with ±4.5 kHz deviation; bit 1 = +deviation, bit 0 = -deviation. Implemented in `_modulate_fsk` in the pure Python encoder.
