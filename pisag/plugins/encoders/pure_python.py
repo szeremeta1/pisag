@@ -257,40 +257,51 @@ class PurePythonEncoder(POCSAGEncoder):
 
     # Batch assembly ------------------------------------------------------
     def _generate_batch(self, ric: int, address_codeword: int, message_codewords: List[int]) -> List[int]:
-        preamble = [self._PREAMBLE_WORD] * 18  # 576 bits
-        sync = [0x7CD215D8]
+        """Assemble one or more POCSAG batches, allowing long messages to span batches."""
 
-        batch_slots = [self._IDLE_CODEWORD] * 16  # 8 frames * 2 slots
-        address_pos = (ric & 0x7) * 2
-        batch_slots[address_pos] = address_codeword
+        preamble = [self._PREAMBLE_WORD] * 18  # 576 bits, sent once
+        sync_word = 0x7CD215D8
+        address_pos = (ric & 0x7) * 2  # Frame assignment
 
-        cw_iter = iter(message_codewords)
-        placed = 0
-        for idx in range(address_pos + 1, 16):
-            try:
-                batch_slots[idx] = next(cw_iter)
+        remaining = list(message_codewords)
+        batches: List[int] = []
+        batch_count = 0
+
+        while True:
+            batches.append(sync_word)
+
+            # Start a fresh batch filled with idle codewords
+            batch_slots = [self._IDLE_CODEWORD] * 16  # 8 frames * 2 slots
+
+            # Include the address only in the first batch; subsequent batches maximize payload
+            start_idx = 0
+            if batch_count == 0:
+                batch_slots[address_pos] = address_codeword
+                start_idx = address_pos + 1
+
+            placed = 0
+            for idx in range(start_idx, 16):
+                if not remaining:
+                    break
+                batch_slots[idx] = remaining.pop(0)
                 placed += 1
-            except StopIteration:
+
+            batches.extend(batch_slots)
+            batch_count += 1
+
+            if not remaining:
                 break
 
-        remaining = list(cw_iter)
-        if remaining:
-            self.logger.error(
-                "Message codewords truncated; exceeds available slots",
-                extra={"excess": len(remaining)},
-            )
-            raise EncodingError("Message too long for single POCSAG batch")
-
         self.logger.debug(
-            "Batch assembled",
+            "Batch(es) assembled",
             extra={
                 "address_pos": address_pos,
                 "message_codewords": len(message_codewords),
-                "placed": placed,
-                "total_batch_codewords": len(batch_slots),
+                "batches": batch_count,
             },
         )
-        return preamble + sync + batch_slots
+
+        return preamble + batches
 
     # Bitstream -----------------------------------------------------------
     def _codewords_to_bits(self, codewords: List[int]) -> List[int]:
