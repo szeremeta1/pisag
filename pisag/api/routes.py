@@ -257,9 +257,23 @@ def analytics():
         time_series = svc.get_messages_over_time(session)
         freq_usage = svc.get_frequency_usage(session)
         pager_activity = svc.get_pager_activity(session)
+        
+        # Get recent messages for dashboard
+        messages = (
+            session.query(Message)
+            .options(selectinload(Message.recipients).selectinload(MessageRecipient.pager))
+            .order_by(Message.timestamp.desc())
+            .limit(10)
+            .all()
+        )
+        
         return jsonify(
             {
-                "statistics": stats,
+                "total_messages": stats.get("total_messages", 0),
+                "success_rate": stats.get("success_rate", 0),
+                "today_count": stats.get("messages_today", 0),
+                "active_pagers": stats.get("active_pagers", 0),
+                "recent_messages": [serialize_message(m) for m in messages],
                 "time_series": time_series,
                 "frequency_usage": freq_usage,
                 "pager_activity": pager_activity,
@@ -280,6 +294,13 @@ def status():
     status_dict["worker_running"] = worker_running
     status_dict["frequency"] = cfg.get("system", {}).get("frequency")
     status_dict["baud_rate"] = cfg.get("pocsag", {}).get("baud_rate")
+    status_dict["transmit_power"] = cfg.get("system", {}).get("transmit_power")
+    status_dict["if_gain"] = cfg.get("system", {}).get("if_gain")
+    status_dict["sample_rate"] = cfg.get("system", {}).get("sample_rate")
+    status_dict["deviation"] = cfg.get("pocsag", {}).get("deviation")
+    status_dict["invert"] = cfg.get("pocsag", {}).get("invert")
+    status_dict["encoder"] = cfg.get("plugins", {}).get("pocsag_encoder")
+    status_dict["sdr_interface"] = cfg.get("plugins", {}).get("sdr_interface")
 
     if not worker_running or not status_dict.get("hackrf_connected"):
         return _error_response("Service unavailable", 503, details=status_dict)

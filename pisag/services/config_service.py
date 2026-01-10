@@ -23,6 +23,7 @@ class ConfigService:
 
     def update_configuration(self, session, updates: Dict[str, Any], config_path: str = "config.json") -> Dict[str, Any]:
         system_updates = updates.get("system", {})
+        pocsag_updates = updates.get("pocsag", {})
         validated: Dict[str, tuple[Any, str]] = {}
 
         if "frequency" in system_updates:
@@ -48,6 +49,16 @@ class ConfigService:
             if not 2.0 <= rate <= 20.0:
                 raise ValueError("Sample rate must be between 2 and 20 MHz")
             validated["system.sample_rate"] = (rate, "float")
+
+        if "baud_rate" in pocsag_updates:
+            baud = int(pocsag_updates["baud_rate"])
+            if baud != 512:
+                raise ValueError("POCSAG baud rate must be 512 baud")
+            validated["pocsag.baud_rate"] = (baud, "int")
+
+        if "invert" in pocsag_updates:
+            invert = bool(pocsag_updates["invert"])
+            validated["pocsag.invert"] = (invert, "bool")
 
         for key, (value, value_type) in validated.items():
             SystemConfig.set_config(session, key, value, value_type)
