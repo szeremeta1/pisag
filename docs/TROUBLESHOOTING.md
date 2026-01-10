@@ -10,6 +10,11 @@
 - Checks: HackRF connected; frequency valid; power 0-15 dBm; sample rate/gain reasonable; CPU load.
 - Fix: Reconnect HackRF; restart service; lower power/gain; verify config via Settings/API; inspect logs.
 
+## PDW Paging Decoder Not Receiving
+- Symptoms: RTL-SDR + PDW shows no decodes; frequency is correct.
+- Checks: FSK polarity setting; frequency accuracy; RTL-SDR tuning; PDW configuration.
+- Fix: Enable "Invert FSK" in Settings tab (should be on by default); verify frequency matches exactly; check RTL-SDR gain settings; ensure PDW is set to POCSAG 512 baud mode.
+
 ## Web Interface Not Loading
 - Symptoms: Cannot reach `http://<ip>:5000`.
 - Checks: `systemctl status pisag`; `ps aux | grep pisag`; firewall/port conflicts.
