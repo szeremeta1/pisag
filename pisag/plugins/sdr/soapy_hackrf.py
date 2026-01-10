@@ -103,25 +103,31 @@ class SoapySDRInterface(SDRInterface):
             self.logger.info(f"    Sample Rate: {actual_sr/1e6:.6f} MHz")
             self.logger.info(f"    Duration: {len(iq_samples) / actual_sr:.3f} seconds")
             self.logger.info("    ⏳ Writing samples to HackRF in chunks...")
-            
-            # Write samples in chunks to ensure all data is transmitted
+
             total_written = 0
             chunk_size = 131072  # Write in 128K chunks
-            num_chunks = (len(samples_cf32) + chunk_size - 1) // chunk_size
-            
             for i in range(0, len(samples_cf32), chunk_size):
                 chunk = samples_cf32[i:i + chunk_size]
-                result = self.device.writeStream(stream, [chunk], len(chunk))
-                # Handle both integer return and StreamResult object
-                if hasattr(result, 'ret'):
-                    written = result.ret
-                elif isinstance(result, int):
-                    written = result
-                else:
-                    written = len(chunk)  # Assume all written if unclear
-                total_written += written
+                chunk_written = 0
+                while chunk_written < len(chunk):
+                    result = self.device.writeStream(stream, [chunk[chunk_written:]], len(chunk) - chunk_written)
+                    if hasattr(result, "ret"):
+                        written = result.ret
+                    elif isinstance(result, int):
+                        written = result
+                    else:
+                        written = len(chunk) - chunk_written
+                    if written < 0:
+                        raise TransmissionError(f"SoapySDR writeStream failed with error code {written}")
+                    if written == 0:
+                        time.sleep(0.001)
+                        continue
+                    chunk_written += written
+                    total_written += written
                 if (i // chunk_size + 1) % 10 == 0 or i + chunk_size >= len(samples_cf32):
-                    self.logger.info(f"      Progress: {total_written}/{len(samples_cf32)} samples ({100*total_written/len(samples_cf32):.1f}%)")
+                    self.logger.info(
+                        f"      Progress: {total_written}/{len(samples_cf32)} samples ({100*total_written/len(samples_cf32):.1f}%)"
+                    )
             
             # Add a short zero tail to ensure the device drains its FIFO fully
             tail = np.zeros(min(65536, int(actual_sr * 0.02)), dtype=np.complex64)
