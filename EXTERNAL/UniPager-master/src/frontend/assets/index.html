@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>UniPager</title>
+    <link type="text/css" rel="stylesheet" href="/style.css">
+    <script src="/vue.js"></script>
+  </head>
+  <body>
+    <div id="app">
+      <div id="login" v-if="!auth">
+        <h1>UniPager</h1>
+        <input type="password" v-model="password" autofocus
+          @keyup.enter="authenticate" ref="password">
+        <button @click="authenticate()">Login</button>
+      </div>
+      <div id="wrapper" v-if="auth">
+        <div id="boxes">
+          <div class="box">
+            <div class="box-header">
+              <h3>Configuration</h3>
+            </div>
+            <div class="box-content">
+              <div class="form-group">
+                <label for="transmitter">Transmitter</label>
+                <select id="transmitter" v-model="config.transmitter">
+                  <option>Dummy</option>
+                  <option>Audio</option>
+                  <option value="Raspager">Raspager V2</option>
+<!--                  <option value="Raspager2">Raspager 2</option>-->
+                  <option>C9000</option>
+                  <option>RFM69</option>
+                </select>
+              </div>
+              <div v-if="config.master.standalone_mode !== true">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="master-server">Master IP</label>
+                    <input type="text" id="master-server"
+                           v-model="config.master.server">
+                  </div>
+                  <div class="form-group">
+                    <label for="master-port">Port</label>
+                    <input type="number" id="master-port"
+                           v-model.number="config.master.port" class="u16-number"
+                           step="1" min="0" max="65535">
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="master-call">Callsign</label>
+                    <input type="text" id="master-call"
+                           v-model="config.master.call">
+                  </div>
+                  <div class="form-group">
+                    <label for="master-auth">Auth Key</label>
+                    <input type="text" id="master-auth"
+                           v-model="config.master.auth">
+                  </div>
+                </div>
+              </div>
+              <div v-if="config.master.standalone_mode === true">
+                Unipager is configured in 'standalone' mode. No server connection is attempted.
+                To change the configuration edit the config.json file and restart the service.
+              </div>
+            </div>
+          </div>
+
+          <div class="box" v-if="config.transmitter && config.transmitter.indexOf('Raspager') === 0">
+            <div class="box-header">
+              <h3>Raspager Config</h3>
+            </div>
+            <div class="box-content">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="raspager-freq">Frequency (Hz)</label>
+                  <input type="number" id="raspager-freq"
+                    v-model.number="config.raspager.freq" class="u32-number">
+                </div>
+                <div class="form-group">
+                  <label for="raspager-freq-corr">Frequency Correction</label>
+                  <input type="number" id="raspager-freq-corr"
+                    v-model.number="config.raspager.freq_corr" class="u16-number"
+                    step="1" min="-1024" max="1023">
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="raspager-pa-output-level">PA Output Level</label>
+                  <input type="number" id="raspager-pa-output-level"
+                    v-model.number="config.raspager.pa_output_level"
+                    step="1" min="0" max="63" class="u8-number">
+                </div>
+                <div class="form-group">
+                  <label for="raspager-mod-deviation">Mod. Deviation</label>
+                  <input type="number" id="raspager-mod-deviation"
+                    v-model.number="config.raspager.mod_deviation"
+                    step="1" min="0" max="511" class="u16-number">
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="box" v-if="config.transmitter === 'C9000'">
+            <div class="box-header">
+              <h3>Compact9000 Config</h3>
+            </div>
+            <div class="box-content">
+              PA Dummy<br>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="c9000-dummy-enabled">Enabled</label>
+                  <input type="checkbox" id="c9000-dummy-enabled"
+                    v-model="config.c9000.dummy_enabled">
+                </div>
+                <div class="form-group" v-if="config.c9000.dummy_enabled">
+                  <label for="c9000-dummy-port">Serial Port</label>
+                  <input type="text" id="c9000-dummy-port"
+                    v-model="config.c9000.dummy_port">
+                </div>
+              </div>
+              <div class="form-row" v-if="config.c9000.dummy_enabled">
+                <div class="form-group">
+                  <label for="c9000-dummy-pa-output-level">Output Level (W)
+                    <span class="help" title="Approximate output power of exciter (Output power with amplifier).&#13;* setting only usable with recent versions of C9000 firmware">?</span>
+                  </label>
+                  <select id="c9000-dummy-pa-output-level"
+                    v-model="config.c9000.dummy_pa_output_level">
+                    <option v-bind:value="66">2W (25W)</option>
+                    <option v-bind:value="82">3W (37W)</option>
+                    <option v-bind:value="99">4W (51W)</option>
+                    <option v-bind:value="111">5W (63W)</option>
+                    <option v-bind:value="122">6W (74W)</option>
+                    <option v-bind:value="132">7W (85W)</option>
+                    <option v-bind:value="147">8W (103W)</option>
+                    <option v-bind:value="154">9W (111W)</option>
+                    <option v-bind:value="163">10W (124W)</option>
+                    <option v-bind:value="174">11W (140W)</option>
+                    <option v-bind:value="183">12W (153W)</option>
+                    <option v-bind:value="188">13W (161W)</option>
+                    <option v-bind:value="194">14W (171W)</option>
+                    <option v-bind:value="204">16W (187W)</option>
+                    <option v-bind:value="211">18W (200W)</option>
+                    <option v-bind:value="216">20W (210W)*</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="box" v-if="config.transmitter === 'RFM69'">
+            <div class="box-header">
+              <h3>RFM69 Config</h3>
+            </div>
+            <div class="box-content">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="rfm69-port">Serial Port</label>
+                  <input type="text" id="rfm69-port"
+                    v-model="config.rfm69.port">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="box" v-if="config.transmitter === 'Audio'">
+            <div class="box-header">
+              <h3>Audio Config</h3>
+            </div>
+            <div class="box-content">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="audio-device">ALSA device
+                    <span class="help" title="Leave empty for default">?</span>
+                  </label>
+                  <input type="text" id="audio-device"
+                    v-model="config.audio.device">
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="audio-level">Audio Level: {{config.audio.level}}</label>
+                  <input type="range" id="audio-level"
+                    v-model.number="config.audio.level"
+                    step="1" min="0" max="127">
+                </div>
+                <div class="form-group">
+                  <label for="audio-inverted">Inverted</label>
+                  <input type="checkbox" id="audio-inverted"
+                    v-model="config.audio.inverted">
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="audio-tx-delay">TX Delay (ms)</label>
+                  <input type="number" id="audio-tx-delay"
+                    v-model.number="config.audio.tx_delay"
+                    step="1" min="0" max="100"
+                    class="u8-number">
+                </div>
+                <div class="form-group">
+                  <label for="audio-baudrate">Baudrate</label>
+                  <select id="audio-baudrate" v-model.number="config.audio.baudrate">
+                    <option>512</option>
+                    <option>1200</option>
+                    <option>2400</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="box" v-if="config.transmitter === 'Audio'">
+            <div class="box-header">
+              <h3>PTT Config</h3>
+            </div>
+            <div class="box-content">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="ptt-method">PTT Method</label>
+                  <select id="ptt-method" v-model="config.ptt.method">
+                    <option value="Gpio">GPIO</option>
+                    <option value="SerialDtr">Serial (DTR)</option>
+                    <option value="SerialRts">Serial (RTS)</option>
+                    <option value="HidRaw">HIDraw</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group" v-if="config.ptt.method === 'Gpio'">
+                  <label for="ptt-gpio-pin">
+                    GPIO Pin
+                    <a href="/pin_numbers.png" target="_blank" class="help"
+                       title="Wiring Pi Assignments">?</a>
+                  </label>
+                  <input type="number" id="ptt-gpio-pin"
+                    v-model.number="config.ptt.gpio_pin"
+                    step="1" min="0" class="u8-number">
+                </div>
+
+                <div class="form-group" v-if="config.ptt.method === 'SerialDtr' || config.ptt.method === 'SerialRts'">
+                  <label for="ptt-serial-port">Serial Port</label>
+                  <input type="text" id="ptt-serial-port"
+                    v-model="config.ptt.serial_port">
+                </div>
+                <div class="form-group" v-if="config.ptt.method === 'HidRaw'">
+                  <label for="ptt-hidraw-device">Hidraw Device</label>
+                  <input type="text" id="ptt-hidraw-device"
+                    v-model="config.ptt.hidraw_device">
+                </div>
+                <div class="form-group" v-if="config.ptt.method === 'HidRaw'">
+                  <label for="ptt-hidraw-gpio-pin">
+                    GPIO Pin
+                  </label>
+                    <span class="help" title="Default is GPIO3 (pin 13)">?</span>
+                  <input type="number" id="ptt-hidraw-gpio-pin"
+                    v-model.number="config.ptt.hidraw_gpio_pin"
+                    step="1" min="1" max="4" class="u8-number">
+                </div>
+                <div class="form-group">
+                  <label for="ptt-inverted">Inverted</label>
+                  <input type="checkbox" id="ptt-inverted"
+                    v-model="config.ptt.inverted">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="box">
+            <div class="box-header">
+              <h3>Send Message</h3>
+            </div>
+            <div class="box-content">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="message-ric">Address</label>
+                  <input type="number" id="message-ric" v-model.number="message.message.ric"
+                    class="u16-number">
+                </div>
+                <div class="form-group">
+                  <label for="message-data">Data</label>
+                  <input type="text" id="message-data" v-model="message.message.data">
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="message-speed">Baudrate
+                    <span class="help"
+                          title="Only 1200 is supported. For Audio transmitter it can be overwritten in the transmitter.">?</span>
+                  </label>
+                  <select id="message-speed" v-model.number="message.message.speed" disabled>
+                    <option>512</option>
+                    <option>1200</option>
+                    <option>2400</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="message-mtype">Type</label>
+                  <select id="message-mtype" v-model="message.message.type">
+                    <option value="alphanum">AlphaNum</option>
+                    <option value="numeric">Numeric</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="message-func">Function</label>
+                  <select id="message-func" v-model.number="message.message.func">
+                    <option>0</option>
+                    <option>1</option>
+                    <option>2</option>
+                    <option>3</option>
+                  </select>
+                </div>
+                <button @click="send_message">Send</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="box">
+            <div class="box-header">
+              <h3>Commands</h3>
+            </div>
+            <div class="box-content">
+              <div style="padding-bottom: 10px;">
+                <button class="green" @click="save_config">Save Config</button>
+                <button class="orange" @click="default_config">Default Config</button>
+              </div>
+              <div>
+                <button class="orange" @click="test_submission">Test</button>
+                <button class="orange" @click="restart">Restart</button>
+                <button class="red" @click="shutdown">Shutdown</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="box">
+            <div class="box-header">
+              <h3>Telemetry</h3>
+            </div>
+            <div class="box-content">
+              <div class="telemetry" v-bind:class="{ 'onair': telemetry.onair }">
+                On Air
+              </div>
+              <div class="telemetry" v-bind:class="{ 'connected': telemetry.node.connected }">
+                {{telemetry.node.name ? telemetry.node.name : "No master connection"}}
+              </div>
+              <div class="telemetry">
+                <span v-for="(queue, index) in telemetry.messages.queued">
+                  {{queue}}
+                </span>
+              </div>
+              <div class="timeslots">
+                <span v-for="(slot, index) in telemetry.timeslots">
+                  <div class="timeslot" v-bind:class="{ 'enabled': slot, 'active': index === timeslot}">
+                    {{index.toString(16).toUpperCase()}}
+                  </div>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="messages">
+          <table>
+            <tr>
+              <th>Protocol</th>
+              <th>Priority</th>
+              <th>RIC</th>
+              <th>Type</th>
+              <th width="100%">Data</th>
+            </tr>
+            <tr v-for="message in messages">
+              <td>{{message.protocol}}</td>
+              <td>{{message.priority}}</td>
+              <td>{{message.message.ric}}</td>
+              <td>{{message.message.type}}</td>
+              <td>{{message.message.data}}</td>
+            </tr>
+          </table>
+        </div>
+
+        <div id="log">
+          <p v-for="record in log">
+            <span class="log-level" v-if="record.level" v-bind:class="[record.level]">{{record.level}}</span> <span class="log-time" v-if="record.time">{{record.time.toJSON().slice(11, 19)}}</span>
+            {{record.msg}}
+          </p>
+        </div>
+
+        <footer>
+          <div class="logo">
+            <a href="http://www.afu.rwth-aachen.de"><img src="/logo.png" alt="Logo"></a>
+          </div>
+          <div>
+            <p>
+              <b>UniPager {{version}}</b>
+            </p>
+            <p>
+              &copy; 2017-2020 RWTH Amateurfunkgruppe
+            </p>
+            <p>
+              <a href="https://github.com/rwth-afu/UniPager">GitHub</a>
+              &bull; <a href="https://github.com/rwth-afu/UniPager/issues">Report Issues</a>
+              &bull; <a href="https://www.afu.rwth-aachen.de/ueber-uns/spendenaufruf">Donate</a>
+              &bull; <a href="http://hampager.de/dokuwiki/doku.php?id=unipager" target="_blank">DokuWiki</a>
+              &bull; <a href="http://hampager.de/dokuwiki/doku.php?id=unipagerled" target="_blank">LED Control</a>
+              &bull; <a href="http://hampager.de/dokuwiki/doku.php?id=unipagernextion" target="_blank">Nextion Display Software</a>
+            </p>
+          </div>
+        </footer>
+      </div>
+    </div>
+    <script src="/main.js"></script>
+  </body>
+</html>

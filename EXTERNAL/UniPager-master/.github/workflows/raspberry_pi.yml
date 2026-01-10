@@ -1,0 +1,37 @@
+name: Raspberry Pi Cross Compilation
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Install cross compiler
+      run: sudo apt-get install gcc-arm-linux-gnueabihf
+    - name: Create cargo config
+      run: |
+        mkdir -p ~/.cargo
+        echo >> ~/.cargo/config
+        echo "[target.armv7-unknown-linux-gnueabihf]" >> ~/.cargo/config
+        echo "linker = \"arm-linux-gnueabihf-gcc\"" >> ~/.cargo/config
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        target: armv7-unknown-linux-gnueabihf
+        override: true
+    - uses: actions-rs/cargo@v1
+      with:
+        use-cross: true
+        command: build
+        args: --release --target armv7-unknown-linux-gnueabihf
+    - name: Archive binary
+      uses: actions/upload-artifact@v2
+      with:
+        name: unipager
+        path: target/armv7-unknown-linux-gnueabihf/release/unipager
+        retention-days: 30
