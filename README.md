@@ -11,7 +11,8 @@ Educational, hobby-friendly POCSAG pager transmission system for Raspberry Pi + 
 - SQLite + Alembic migrations; transmission logs and analytics
 - Rotating file logging with optional console output
 - Designed for Raspberry Pi 3/4 in constrained environments
-- **PDW Paging Decoder compatible** - LSB-first encoding per POCSAG standard (ITU-R M.584) and inverted FSK polarity for RTL-SDR receivers
+- **✅ Standard-compliant POCSAG encoding** - Verified against UniPager reference implementation
+- **PDW Paging Decoder compatible** - LSB-first encoding per POCSAG standard (ITU-R M.584) with correct codeword generation
 
 ## Hardware Requirements
 - Raspberry Pi 3 or newer
@@ -65,6 +66,7 @@ install.sh            # Automated install script
 - [Usage Guide](docs/USAGE.md)
 - [Troubleshooting](docs/TROUBLESHOOTING.md)
 - [POCSAG Protocol](docs/POCSAG.md)
+- [UniPager Integration](docs/UNIPAGER_INTEGRATION.md) - Fixed encoding & integration guide
 - [Legal / Regulatory](docs/LEGAL.md)
 - [API Reference](docs/API.md)
 - [Database](docs/DATABASE.md)
