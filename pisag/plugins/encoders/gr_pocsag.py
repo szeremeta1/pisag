@@ -79,6 +79,11 @@ class GrPocsagEncoder(POCSAGEncoder):
                 "frequency_mhz": frequency_mhz,
                 "baud_rate": baud_rate,
                 "gain_db": gain_db,
+                "sample_rate": self.sample_rate,
+                "af_gain": self.af_gain,
+                "max_deviation": self.max_deviation,
+                "symrate": self.symrate,
+                "power_dbm": power_dbm,
             },
         )
 
@@ -88,6 +93,12 @@ class GrPocsagEncoder(POCSAGEncoder):
 
         try:
             result = subprocess.run(cmd, check=True, env=env, capture_output=True, text=True)
+            stdout = (result.stdout or "").strip()
+            stderr = (result.stderr or "").strip()
+            if stdout:
+                self.logger.info("gr-pocsag stdout", extra={"stdout": stdout})
+            if stderr:
+                self.logger.warning("gr-pocsag stderr", extra={"stderr": stderr})
             return result
         except FileNotFoundError as exc:
             raise TransmissionError(
@@ -96,7 +107,15 @@ class GrPocsagEncoder(POCSAGEncoder):
             ) from exc
         except subprocess.CalledProcessError as exc:  # pragma: no cover - requires GNU Radio runtime
             stderr = (exc.stderr or "").strip()
-            raise TransmissionError(f"gr-pocsag failed (rc={exc.returncode}): {stderr or exc}") from exc
+            stdout = (exc.stdout or "").strip()
+            extra = {}
+            if stdout:
+                extra["stdout"] = stdout
+            if stderr:
+                extra["stderr"] = stderr
+            if extra:
+                self.logger.error("gr-pocsag subprocess output", extra=extra)
+            raise TransmissionError(f"gr-pocsag failed (rc={exc.returncode}): {stderr or stdout or exc}") from exc
 
     # Helpers --------------------------------------------------------------
     def _build_command(
