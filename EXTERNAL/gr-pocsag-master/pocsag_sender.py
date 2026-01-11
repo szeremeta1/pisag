@@ -27,7 +27,12 @@ import time
 
 
 
-DEFAULT_SINK_ARGS = os.environ.get("PISAG_GR_POCSAG_SINK_ARGS", "numchan=1 hackrf,amp=1")
+# Default to the first HackRF with PA/amp enabled. Override with PISAG_GR_POCSAG_SINK_ARGS
+# e.g., "hackrf=0,serial=0000000000000000,amp=1" if multiple devices are present.
+DEFAULT_SINK_ARGS = os.environ.get("PISAG_GR_POCSAG_SINK_ARGS", "hackrf=0,amp=1")
+# Allow tuning osmosdr buffering to reduce underruns ("U" messages)
+DEFAULT_BUFFERS = int(os.environ.get("PISAG_GR_POCSAG_BUFFERS", 256))
+DEFAULT_BUFLEN = int(os.environ.get("PISAG_GR_POCSAG_BUFLEN", 32768))
 
 
 class pocsag_sender(gr.top_block):
@@ -45,6 +50,8 @@ class pocsag_sender(gr.top_block):
         max_deviation=4500.0,
         af_gain=190,
         sink_args: str = DEFAULT_SINK_ARGS,
+        sink_buffers: int = DEFAULT_BUFFERS,
+        sink_buflen: int = DEFAULT_BUFLEN,
     ):
         gr.top_block.__init__(self, "POCSAG Sender via HackRF")
 
@@ -66,6 +73,8 @@ class pocsag_sender(gr.top_block):
         self.max_deviation = max_deviation
         self.af_gain = af_gain
         self.sink_args = sink_args
+        self.sink_buffers = sink_buffers
+        self.sink_buflen = sink_buflen
 
         ##################################################
         # Blocks
@@ -87,11 +96,16 @@ class pocsag_sender(gr.top_block):
         self.osmosdr_sink_0.set_bb_gain(20, 0)
         self.osmosdr_sink_0.set_bandwidth(0, 0)
         self.osmosdr_sink_0.set_antenna('', 0)
+        try:
+            self.osmosdr_sink_0.set_buffer_size(self.sink_buflen)
+            self.osmosdr_sink_0.set_num_buffers(self.sink_buffers)
+        except Exception:
+            pass
 
         # Emit basic runtime configuration for debugging
         print("[gr-pocsag] sink args:", sink_args, file=sys.stderr)
         print(
-            "[gr-pocsag] cfg freq={:.6f} MHz samp_rate={} symrate={} bitrate={} tx_gain={} af_gain={} max_dev={}".format(
+            "[gr-pocsag] cfg freq={:.6f} MHz samp_rate={} symrate={} bitrate={} tx_gain={} af_gain={} max_dev={} buffers={} buflen={}".format(
                 self.pagerfreq / 1e6,
                 self.samp_rate,
                 self.symrate,
@@ -99,6 +113,8 @@ class pocsag_sender(gr.top_block):
                 self.tx_gain,
                 self.af_gain,
                 self.max_deviation,
+                self.sink_buffers,
+                self.sink_buflen,
             ),
             file=sys.stderr,
         )
@@ -248,6 +264,8 @@ def main(top_block_cls=pocsag_sender, options=None):
         max_deviation=float(options.MaxDeviation),
         af_gain=float(options.AFGain),
         sink_args=os.environ.get("PISAG_GR_POCSAG_SINK_ARGS", DEFAULT_SINK_ARGS),
+        sink_buffers=int(os.environ.get("PISAG_GR_POCSAG_BUFFERS", DEFAULT_BUFFERS)),
+        sink_buflen=int(os.environ.get("PISAG_GR_POCSAG_BUFLEN", DEFAULT_BUFLEN)),
     )
     tb.start()
     tb.wait()
