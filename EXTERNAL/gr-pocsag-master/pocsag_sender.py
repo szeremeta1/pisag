@@ -10,6 +10,7 @@
 
 
 import os
+import sys
 
 from gnuradio import analog
 from gnuradio import blocks
@@ -23,6 +24,10 @@ import math
 import osmosdr
 import pocsag_generator
 import time
+
+
+
+DEFAULT_SINK_ARGS = os.environ.get("PISAG_GR_POCSAG_SINK_ARGS", "numchan=1 hackrf,amp=1")
 
 
 class pocsag_sender(gr.top_block):
@@ -39,6 +44,7 @@ class pocsag_sender(gr.top_block):
         symrate=38400,
         max_deviation=4500.0,
         af_gain=190,
+        sink_args: str = DEFAULT_SINK_ARGS,
     ):
         gr.top_block.__init__(self, "POCSAG Sender via HackRF")
 
@@ -59,6 +65,7 @@ class pocsag_sender(gr.top_block):
         self.pagerfreq = float(pagerfreq)
         self.max_deviation = max_deviation
         self.af_gain = af_gain
+        self.sink_args = sink_args
 
         ##################################################
         # Blocks
@@ -70,15 +77,31 @@ class pocsag_sender(gr.top_block):
         	  flt_size=16)
         self.pfb_arb_resampler_xxx_0.declare_sample_delay(0)
 
-        self.osmosdr_sink_0 = osmosdr.sink( args="numchan=" + str(1) + " " + 'hackrf' )
+        self.osmosdr_sink_0 = osmosdr.sink(args=sink_args)
         self.osmosdr_sink_0.set_sample_rate(samp_rate)
         self.osmosdr_sink_0.set_center_freq(self.pagerfreq, 0)
         self.osmosdr_sink_0.set_freq_corr(0, 0)
-        self.osmosdr_sink_0.set_gain(0, 0)
+        self.osmosdr_sink_0.set_gain_mode(False, 0)
+        self.osmosdr_sink_0.set_gain(tx_gain, 0)
         self.osmosdr_sink_0.set_if_gain(tx_gain, 0)
         self.osmosdr_sink_0.set_bb_gain(20, 0)
-        self.osmosdr_sink_0.set_antenna('', 0)
         self.osmosdr_sink_0.set_bandwidth(0, 0)
+        self.osmosdr_sink_0.set_antenna('', 0)
+
+        # Emit basic runtime configuration for debugging
+        print("[gr-pocsag] sink args:", sink_args, file=sys.stderr)
+        print(
+            "[gr-pocsag] cfg freq={:.6f} MHz samp_rate={} symrate={} bitrate={} tx_gain={} af_gain={} max_dev={}".format(
+                self.pagerfreq / 1e6,
+                self.samp_rate,
+                self.symrate,
+                self.pocsagbitrate,
+                self.tx_gain,
+                self.af_gain,
+                self.max_deviation,
+            ),
+            file=sys.stderr,
+        )
 
         repeat_factor = self._repeat_factor()
         self.blocks_repeat_0 = blocks.repeat(gr.sizeof_char*1, repeat_factor)
@@ -224,6 +247,7 @@ def main(top_block_cls=pocsag_sender, options=None):
         symrate=int(options.Symrate),
         max_deviation=float(options.MaxDeviation),
         af_gain=float(options.AFGain),
+        sink_args=os.environ.get("PISAG_GR_POCSAG_SINK_ARGS", DEFAULT_SINK_ARGS),
     )
     tb.start()
     tb.wait()
