@@ -1,212 +1,69 @@
-"""Test POCSAG encoder to verify correct codeword generation.
-
-This test validates that the POCSAG encoder generates correct codewords
-that match the POCSAG standard (ITU-R M.584) and are compatible with
-standard decoders like PDW Paging Decoder.
-"""
-
-import sys
+import json
 import os
+from pathlib import Path
 
-# Add parent directory to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+import subprocess
 
-from pisag.plugins.encoders.pure_python import PurePythonEncoder
-import numpy as np
+import pytest
 
-
-def test_address_codeword_generation():
-    """Test that address codewords are generated correctly."""
-    encoder = PurePythonEncoder()
-    
-    # Test case from UniPager analysis
-    ric = 1234567
-    
-    # Expected values based on POCSAG standard and UniPager
-    expected_address = (ric >> 3) & 0x3FFFF  # 154320
-    expected_function = ric & 0x3  # 3
-    expected_frame_pos = (ric & 0x7) * 2  # 14
-    
-    # Generate address codeword
-    codeword = encoder._generate_address_codeword(ric)
-    
-    # Expected codeword based on UniPager (verified match)
-    expected_codeword = 0x4b5a1a25
-    
-    print(f"RIC: {ric}")
-    print(f"Address: {expected_address}")
-    print(f"Function: {expected_function}")
-    print(f"Frame position: {expected_frame_pos}")
-    print(f"Generated codeword: 0x{codeword:08x}")
-    print(f"Expected codeword:  0x{expected_codeword:08x}")
-    print(f"Match: {codeword == expected_codeword}")
-    
-    assert codeword == expected_codeword, f"Codeword mismatch: 0x{codeword:08x} != 0x{expected_codeword:08x}"
-    
-    # Verify parity bit (bit 0)
-    bit_count = bin(codeword).count('1')
-    assert bit_count % 2 == 0, f"Even parity check failed: {bit_count} bits set"
-    
-    print("✓ Address codeword test PASSED")
+from pisag.config import reload_config
+from pisag.plugins.encoders.gr_pocsag import GrPocsagEncoder
 
 
-def test_alphanumeric_encoding():
-    """Test alphanumeric message encoding."""
-    encoder = PurePythonEncoder()
-    
-    message = "TEST"
-    message_type = "alphanumeric"
-    
-    # Generate message codewords
-    codewords = encoder._encode_alphanumeric(message)
-    
-    print(f"\nMessage: '{message}'")
-    print(f"Number of codewords: {len(codewords)}")
-    
-    # Each codeword should have even parity
-    for i, cw in enumerate(codewords):
-        bit_count = bin(cw).count('1')
-        print(f"Codeword {i}: 0x{cw:08x} ({bit_count} bits)")
-        assert bit_count % 2 == 0, f"Even parity check failed for codeword {i}"
-        
-        # Verify message flag (bit 11 should be 1)
-        message_flag = (cw >> 11) & 1
-        assert message_flag == 1, f"Message flag not set in codeword {i}"
-    
-    print("✓ Alphanumeric encoding test PASSED")
+def _write_config(tmp_path: Path, extra: dict | None = None) -> Path:
+    base = {
+        "system": {"frequency": 439.9875, "transmit_power": 10, "if_gain": 40, "sample_rate": 12.0},
+        "pocsag": {"baud_rate": 1200, "deviation": 4.5, "invert": False},
+        "gr_pocsag": {
+            "script_path": "EXTERNAL/gr-pocsag-master/pocsag_sender.py",
+            "use_subprocess": True,
+            "dry_run": True,
+            "subric": 0,
+            "af_gain": 190,
+            "max_deviation": 4500.0,
+            "symrate": 38400,
+            "sample_rate": 12000000,
+        },
+        "plugins": {
+            "pocsag_encoder": "pisag.plugins.encoders.gr_pocsag.GrPocsagEncoder",
+            "sdr_interface": "pisag.plugins.sdr.noop.NoopSDRInterface",
+        },
+        "system_config": {},
+    }
+    if extra:
+        base.update(extra)
+    cfg_path = tmp_path / "config.json"
+    cfg_path.write_text(json.dumps(base))
+    reload_config(str(cfg_path))
+    return cfg_path
 
 
-def test_numeric_encoding():
-    """Test numeric message encoding."""
-    encoder = PurePythonEncoder()
-    
-    message = "12345"
-    message_type = "numeric"
-    
-    # Generate message codewords
-    codewords = encoder._encode_numeric(message)
-    
-    print(f"\nMessage: '{message}'")
-    print(f"Number of codewords: {len(codewords)}")
-    
-    # Each codeword should have even parity
-    for i, cw in enumerate(codewords):
-        bit_count = bin(cw).count('1')
-        print(f"Codeword {i}: 0x{cw:08x} ({bit_count} bits)")
-        assert bit_count % 2 == 0, f"Even parity check failed for codeword {i}"
-        
-        # Verify message flag (bit 11 should be 1)
-        message_flag = (cw >> 11) & 1
-        assert message_flag == 1, f"Message flag not set in codeword {i}"
-    
-    print("✓ Numeric encoding test PASSED")
+def test_builds_gr_pocsag_command(tmp_path):
+    cfg_path = _write_config(tmp_path)
+    encoder = GrPocsagEncoder(config_path=str(cfg_path))
+    cmd = encoder._build_command("1234567", "HELLO", 1200, 439.9875, 10)
+
+    joined = " ".join(cmd)
+    assert "pocsag_sender.py" in joined
+    assert "--RIC" in cmd and "1234567" in cmd
+    assert "--Frequency" in cmd and "439.9875" in cmd
+    assert "--Bitrate" in cmd and "1200" in cmd
+    assert "--TXGain" in cmd and "10.0" in joined
 
 
-def test_full_encoding_pipeline():
-    """Test the full encoding pipeline from RIC + message to IQ samples."""
-    encoder = PurePythonEncoder()
-    
-    ric = "1234567"
-    message = "Hello POCSAG"
-    message_type = "alphanumeric"
-    baud_rate = 512
-    
-    print(f"\nFull encoding test:")
-    print(f"  RIC: {ric}")
-    print(f"  Message: '{message}'")
-    print(f"  Type: {message_type}")
-    print(f"  Baud: {baud_rate}")
-    
-    # Encode message
-    iq_samples = encoder.encode(ric, message, message_type, baud_rate)
-    
-    print(f"  Generated {len(iq_samples)} IQ samples")
-    print(f"  Sample dtype: {iq_samples.dtype}")
-    print(f"  Complex samples: {np.iscomplexobj(iq_samples)}")
-    
-    # Verify output
-    assert isinstance(iq_samples, np.ndarray), "Output should be numpy array"
-    assert iq_samples.dtype == np.complex64, "Output should be complex64"
-    assert len(iq_samples) > 0, "Should generate samples"
-    
-    # Verify sample values are reasonable (magnitude should be ~1)
-    magnitudes = np.abs(iq_samples)
-    assert np.all(magnitudes > 0.9) and np.all(magnitudes < 1.1), "Sample magnitudes should be ~1"
-    
-    print("✓ Full encoding pipeline test PASSED")
+def test_encode_and_transmit_respects_dry_run(tmp_path, monkeypatch):
+    cfg_path = _write_config(tmp_path)
+    monkeypatch.setenv("PISAG_GR_POCSAG_DRY_RUN", "1")
+    calls: list[list[str]] = []
 
+    def fake_run(cmd, check, env, **kwargs):
+        calls.append(cmd)
+        raise AssertionError("subprocess should not be called when dry_run is enabled")
 
-def test_idle_codeword():
-    """Test that idle codewords are correct."""
-    encoder = PurePythonEncoder()
-    expected_idle = 0x7A89C197
-    
-    print(f"\nIdle codeword: 0x{encoder._IDLE_CODEWORD:08x}")
-    print(f"Expected:      0x{expected_idle:08x}")
-    
-    assert encoder._IDLE_CODEWORD == expected_idle, "Idle codeword mismatch"
-    
-    # Verify idle codeword has even parity
-    bit_count = bin(expected_idle).count('1')
-    assert bit_count % 2 == 0, "Idle codeword should have even parity"
-    
-    print("✓ Idle codeword test PASSED")
+    monkeypatch.setattr(subprocess, "run", fake_run)
 
+    encoder = GrPocsagEncoder(config_path=str(cfg_path))
+    encoder.encode_and_transmit("1234567", "Test", "alphanumeric", 1200, 439.1, 20, 5)
 
-def test_preamble():
-    """Test that preamble is correct."""
-    encoder = PurePythonEncoder()
-    expected_preamble = 0xAAAAAAAA
-    
-    print(f"\nPreamble word: 0x{encoder._PREAMBLE_WORD:08x}")
-    print(f"Expected:      0x{expected_preamble:08x}")
-    
-    assert encoder._PREAMBLE_WORD == expected_preamble, "Preamble word mismatch"
-    
-    print("✓ Preamble test PASSED")
-
-
-def test_bch_parity():
-    """Test BCH parity calculation."""
-    encoder = PurePythonEncoder()
-    
-    # Test with known values
-    test_data = 0x12D686  # 21-bit data from RIC 1234567
-    parity = encoder._calculate_bch_parity(test_data, 21)
-    expected_parity = 0x224  # From earlier analysis
-    
-    print(f"\nBCH parity test:")
-    print(f"  Data: 0x{test_data:06x}")
-    print(f"  Calculated parity: 0x{parity:03x}")
-    print(f"  Expected parity:   0x{expected_parity:03x}")
-    
-    assert parity == expected_parity, f"BCH parity mismatch: 0x{parity:03x} != 0x{expected_parity:03x}"
-    
-    print("✓ BCH parity test PASSED")
-
-
-if __name__ == "__main__":
-    print("=" * 70)
-    print("POCSAG Encoder Test Suite")
-    print("=" * 70)
-    
-    try:
-        test_bch_parity()
-        test_idle_codeword()
-        test_preamble()
-        test_address_codeword_generation()
-        test_alphanumeric_encoding()
-        test_numeric_encoding()
-        test_full_encoding_pipeline()
-        
-        print("\n" + "=" * 70)
-        print("ALL TESTS PASSED ✓")
-        print("=" * 70)
-        print("\nThe encoder now generates correct POCSAG codewords that should be")
-        print("decodable by PDW Paging Decoder and compatible with real pagers.")
-        
-    except Exception as e:
-        print(f"\n❌ TEST FAILED: {e}")
-        import traceback
-        traceback.print_exc()
-        sys.exit(1)
+    assert calls == []
+    monkeypatch.delenv("PISAG_GR_POCSAG_DRY_RUN", raising=False)

@@ -8,27 +8,39 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict
 
+SUPPORTED_POCSAG_BAUD = (512, 1200, 2400)
+
 _DEFAULT_CONFIG: Dict[str, Any] = {
     "system": {
         "frequency": 439.9875,
         "transmit_power": 10,
         "if_gain": 40,
-        "sample_rate": 2.0,
+        "sample_rate": 12.0,
         "database_path": "pisag.db",
         "log_level": "INFO",
     },
     "pocsag": {
-        "baud_rate": 512,
+        "baud_rate": SUPPORTED_POCSAG_BAUD[1],
         "deviation": 4.5,
         "invert": False,
+    },
+    "gr_pocsag": {
+        "script_path": "EXTERNAL/gr-pocsag-master/pocsag_sender.py",
+        "use_subprocess": True,
+        "dry_run": False,
+        "subric": 0,
+        "af_gain": 190,
+        "max_deviation": 4500.0,
+        "symrate": 38400,
+        "sample_rate": 12000000,
     },
     "hackrf": {
         "device_index": 0,
         "antenna_enable": True,
     },
     "plugins": {
-        "pocsag_encoder": "pisag.plugins.encoders.pure_python.PurePythonEncoder",
-        "sdr_interface": "pisag.plugins.sdr.soapy_hackrf.SoapySDRInterface",
+        "pocsag_encoder": "pisag.plugins.encoders.gr_pocsag.GrPocsagEncoder",
+        "sdr_interface": "pisag.plugins.sdr.noop.NoopSDRInterface",
     },
     "web": {
         "host": "0.0.0.0",
@@ -156,9 +168,9 @@ def _validate(cfg: Dict[str, Any]) -> None:
         raise ConfigurationError("Transmit power must be between -10 and 15 dBm.")
 
     sample_rate = float(cfg["system"]["sample_rate"])
-    if not 2.0 <= sample_rate <= 20.0:
-        raise ConfigurationError("Sample rate must be between 2 and 20 MHz.")
+    if not 2.0 <= sample_rate <= 30.0:
+        raise ConfigurationError("Sample rate must be between 2 and 30 MHz.")
 
     baud_rate = int(cfg["pocsag"]["baud_rate"])
-    if baud_rate != 512:
-        raise ConfigurationError("POCSAG baud rate must be 512 baud.")
+    if baud_rate not in SUPPORTED_POCSAG_BAUD:
+        raise ConfigurationError(f"POCSAG baud rate must be one of {SUPPORTED_POCSAG_BAUD}.")

@@ -40,7 +40,7 @@ sequenceDiagram
 - **Service layer** ([pisag/services](../pisag/services)): Business logic (`MessageService`, `PagerService`, `ConfigService`, `AnalyticsService`), queue management, worker, device monitor, system status singleton.
 - **Transmission infrastructure**: Queue ([transmission_queue.py](../pisag/services/transmission_queue.py)), worker thread ([transmission_worker.py](../pisag/services/transmission_worker.py)), device monitor ([device_monitor.py](../pisag/services/device_monitor.py)), system status ([system_status.py](../pisag/services/system_status.py)).
 - **Database layer** ([pisag/models](../pisag/models)): SQLAlchemy models, session helpers, Alembic migrations.
-- **Plugin system** ([pisag/plugins/base.py](../pisag/plugins/base.py)): Abstract encoder/SDR interfaces; implementations include pure Python POCSAG encoder and SoapySDR HackRF.
+- **Plugin system** ([pisag/plugins/base.py](../pisag/plugins/base.py)): Abstract encoder/SDR interfaces; default gr-pocsag encoder drives the HackRF flowgraph, with a no-op SDR placeholder when gr-pocsag owns RF.
 - **Configuration** ([pisag/config.py](../pisag/config.py)): JSON defaults merged with DB overrides at runtime.
 - **Frontend** ([static/](../static)): Vanilla JS SPA modules (API client, SocketIO client, tab logic) with real-time updates.
 
@@ -55,9 +55,9 @@ flowchart TD
     E --> F[Create Message Record]
     F --> G[Queue Transmission]
     G --> H[Worker Dequeues]
-    H --> I[POCSAG Encode]
-    I --> J[FSK Modulate]
-    J --> K[SDR Transmit]
+    H --> I[POCSAG Encode (gr-pocsag)]
+    I --> J[GNU Radio Flowgraph]
+    J --> K[HackRF Transmit]
     K --> L[Update Status]
     L --> M[Log Transmission]
     M --> N[Notify Frontend]
@@ -116,7 +116,7 @@ erDiagram
 ## Technology Stack
 - Python 3.9+, Flask 3.x, Flask-SocketIO
 - SQLAlchemy 2.x, Alembic, SQLite
-- SoapySDR + HackRF, NumPy
+- GNU Radio + gr-osmosdr + HackRF, NumPy, bitstring
 - Vanilla JavaScript + Socket.IO client
 
 ## Design Decisions

@@ -16,6 +16,7 @@ setup(
         'numpy>=1.24.3',
         'eventlet>=0.33.3',
         'python-dotenv>=1.0.0',
+        'bitstring>=4.1.4',
     ],
     python_requires='>=3.9',
     entry_points={

@@ -5,14 +5,13 @@ Educational, hobby-friendly POCSAG pager transmission system for Raspberry Pi + 
 ## Key Features
 - Web SPA with live status, send, history, settings tabs (Socket.IO real-time updates)
 - REST API for send/history/pagers/config/analytics/status + health/readiness endpoints
-- Plugin architecture for POCSAG encoder and SDR backends (SoapySDR HackRF by default)
+- Plugin architecture for POCSAG encoder and SDR backends (gr-pocsag + HackRF by default)
 - Transmission queue + worker thread with device monitor, pause/resume, and rich logging
 - Hybrid configuration (JSON defaults + DB overrides) with runtime updates
 - SQLite + Alembic migrations; transmission logs and analytics
 - Rotating file logging with optional console output
 - Designed for Raspberry Pi 3/4 in constrained environments
-- **✅ Standard-compliant POCSAG encoding** - Verified against UniPager reference implementation
-- **PDW Paging Decoder compatible** - LSB-first encoding per POCSAG standard (ITU-R M.584) with correct codeword generation and FSK polarity configured for modern decoders
+- **GNU Radio + gr-pocsag pipeline** - Proven HackRF/POCSAG flowgraph decodable on PDW and real pagers
 
 ## Hardware Requirements
 - Raspberry Pi 3 or newer
@@ -21,12 +20,13 @@ Educational, hobby-friendly POCSAG pager transmission system for Raspberry Pi + 
 
 ## Software Requirements
 - Python 3.9+
-- SoapySDR with HackRF module (`soapysdr-module-hackrf`)
+- GNU Radio + gr-osmosdr with HackRF support (`gnuradio`, `gr-osmosdr`, `python3-gnuradio`, `hackrf`, `libhackrf-dev`)
+- bitstring (installed via pip)
 - SQLite (bundled on Raspberry Pi OS)
-- System build deps for NumPy/SoapySDR
+- System build deps for NumPy/GNU Radio
 
 ## Quick Start (summary)
-1) Install deps (Pi): `sudo apt-get update && sudo apt-get install -y python3 python3-venv python3-pip sqlite3 hackrf libhackrf-dev soapysdr-tools libsoapysdr-dev soapysdr-module-hackrf`
+1) Install deps (Pi): `sudo apt-get update && sudo apt-get install -y python3 python3-venv python3-pip sqlite3 hackrf libhackrf-dev gnuradio gr-osmosdr python3-gnuradio`
 2) Clone and install:
 ```bash
 git clone https://github.com/szeremeta1/pisag /opt/pisag
@@ -66,8 +66,6 @@ install.sh            # Automated install script
 - [Usage Guide](docs/USAGE.md)
 - [Troubleshooting](docs/TROUBLESHOOTING.md)
 - [POCSAG Protocol](docs/POCSAG.md)
-- [UniPager Integration](docs/UNIPAGER_INTEGRATION.md) - Fixed encoding & integration guide
-- [External Projects Analysis](docs/EXTERNAL_PROJECTS_ANALYSIS.md) - Comparison with gr-mixalot, gr-pocsag, pocsag-tool, UniPager
 - [Legal / Regulatory](docs/LEGAL.md)
 - [API Reference](docs/API.md)
 - [Database](docs/DATABASE.md)

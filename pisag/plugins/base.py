@@ -37,7 +37,7 @@ class POCSAGEncoder(ABC):
             ric: 7-digit RIC address (e.g., "1234567")
             message: Message content (alphanumeric or numeric)
             message_type: "alphanumeric" or "numeric"
-            baud_rate: POCSAG baud rate (512)
+            baud_rate: POCSAG baud rate (512, 1200, or 2400)
 
         Returns:
             Complex numpy array of IQ samples at configured sample rate

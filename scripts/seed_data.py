@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from sqlalchemy import select
 
-from pisag.config import get_config
+from pisag.config import SUPPORTED_POCSAG_BAUD, get_config
 from pisag.models import Pager, SystemConfig, get_db_session, init_db
 
 
@@ -31,8 +31,8 @@ def seed_system_config(session) -> None:
         ("system.frequency", system.get("frequency", 439.9875), "float"),
         ("system.transmit_power", system.get("transmit_power", 10), "int"),
         ("system.if_gain", system.get("if_gain", 40), "int"),
-        ("system.sample_rate", system.get("sample_rate", 2.0), "float"),
-        ("pocsag.baud_rate", defaults.get("pocsag", {}).get("baud_rate", 512), "int"),
+        ("system.sample_rate", system.get("sample_rate", 12.0), "float"),
+        ("pocsag.baud_rate", defaults.get("pocsag", {}).get("baud_rate", SUPPORTED_POCSAG_BAUD[1]), "int"),
     ]
     for key, value, value_type in entries:
         SystemConfig.set_config(session, key, value, value_type)
