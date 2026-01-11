@@ -171,7 +171,7 @@ class pocsagsender(gr.sync_block):
 
 
 		# 2.5 for every block of 20 bits, calculate crc and partity, and add to codeword
-		ncw = len(textbits)/20 # number of codewords
+		ncw = len(textbits)//20 # number of codewords
 
 		startbit=0
 		stopbit=20 # (actually, the 19th bit)
