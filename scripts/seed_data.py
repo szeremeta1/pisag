@@ -31,7 +31,7 @@ def seed_system_config(session) -> None:
         ("system.frequency", system.get("frequency", 439.9875), "float"),
         ("system.transmit_power", system.get("transmit_power", 10), "int"),
         ("system.if_gain", system.get("if_gain", 40), "int"),
-        ("system.sample_rate", system.get("sample_rate", 2.0), "float"),
+        ("system.sample_rate", system.get("sample_rate", 12.0), "float"),
         ("pocsag.baud_rate", defaults.get("pocsag", {}).get("baud_rate", 512), "int"),
     ]
     for key, value, value_type in entries:

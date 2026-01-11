@@ -74,7 +74,7 @@ def send_message():
 
     cfg = current_app.config.get("PISAG_CONFIG", {})
     frequency = float(cfg.get("system", {}).get("frequency", 439.9875))
-    baud_rate = int(cfg.get("pocsag", {}).get("baud_rate", 512))
+    baud_rate = int(cfg.get("pocsag", {}).get("baud_rate", 1200))
 
     session = get_request_session()
     service = MessageService(_get_queue())

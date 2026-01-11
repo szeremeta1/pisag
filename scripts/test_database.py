@@ -4,6 +4,10 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+import json
+from pathlib import Path
+
+import pytest
 
 from sqlalchemy import text
 
@@ -16,6 +20,24 @@ from pisag.models import (
     get_db_session,
     init_db,
 )
+from pisag.config import reload_config
+
+
+@pytest.fixture
+def session(tmp_path):
+    cfg_path = tmp_path / "config.json"
+    cfg = {
+        "system": {"database_path": str(tmp_path / "test.db")},
+        "plugins": {
+            "pocsag_encoder": "pisag.plugins.encoders.gr_pocsag.GrPocsagEncoder",
+            "sdr_interface": "pisag.plugins.sdr.noop.NoopSDRInterface",
+        },
+    }
+    cfg_path.write_text(json.dumps(cfg))
+    reload_config(str(cfg_path))
+    init_db(str(cfg_path))
+    with get_db_session(str(cfg_path)) as db_session:
+        yield db_session
 
 
 def test_create_pager(session) -> None:

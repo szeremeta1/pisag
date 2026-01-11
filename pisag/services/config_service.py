@@ -46,14 +46,14 @@ class ConfigService:
 
         if "sample_rate" in system_updates:
             rate = float(system_updates["sample_rate"])
-            if not 2.0 <= rate <= 20.0:
-                raise ValueError("Sample rate must be between 2 and 20 MHz")
+            if not 2.0 <= rate <= 30.0:
+                raise ValueError("Sample rate must be between 2 and 30 MHz")
             validated["system.sample_rate"] = (rate, "float")
 
         if "baud_rate" in pocsag_updates:
             baud = int(pocsag_updates["baud_rate"])
-            if baud != 512:
-                raise ValueError("POCSAG baud rate must be 512 baud")
+            if baud not in {512, 1200, 2400}:
+                raise ValueError("POCSAG baud rate must be 512, 1200, or 2400 baud")
             validated["pocsag.baud_rate"] = (baud, "int")
 
         if "invert" in pocsag_updates:

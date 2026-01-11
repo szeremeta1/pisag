@@ -39,16 +39,20 @@ class TransmissionWorker:
         sdr_class = self.config.get("plugins", {}).get("sdr_interface")
         self.encoder = load_plugin("encoder", encoder_class)
         self.sdr = load_plugin("sdr", sdr_class)
+        self.encoder_handles_tx = hasattr(self.encoder, "encode_and_transmit")
 
     # Lifecycle -----------------------------------------------------------
     def start(self) -> None:
         if self._running:
             return
         connected = False
-        try:
-            connected = self.sdr.connect()
-        except Exception:
-            connected = False
+        if not self.encoder_handles_tx:
+            try:
+                connected = self.sdr.connect()
+            except Exception:
+                connected = False
+        else:
+            connected = True
 
         if not connected:
             self.logger.warning("SDR not connected at startup; running in degraded mode")
@@ -95,7 +99,7 @@ class TransmissionWorker:
         baud_rate = int(request["baud_rate"])
 
         sys_cfg = self.config.get("system", {})
-        sample_rate = float(sys_cfg.get("sample_rate", 2.0))
+        sample_rate = float(sys_cfg.get("sample_rate", 12.0))
         gain = float(sys_cfg.get("if_gain", 40))
         power = float(sys_cfg.get("transmit_power", 10))
 
@@ -131,29 +135,43 @@ class TransmissionWorker:
                     f"Processing recipient {idx}/{len(recipients)}: RIC {ric}",
                     extra={"message_id": message_id, "ric": ric, "recipient_index": idx},
                 )
-                iq_samples = self.encoder.encode(ric, message_text, message_type, baud_rate)
-                self.logger.info(
-                    "Encoded samples generated",
-                    extra={
-                        "message_id": message_id,
-                        "ric": ric,
-                        "sample_count": len(iq_samples),
-                        "sample_dtype": str(iq_samples.dtype),
-                        "is_complex": np.iscomplexobj(iq_samples),
-                    },
-                )
-                self._update_message_status(message_id, "transmitting")
-                self._create_log_entry(
-                    message_id,
-                    "transmitting",
-                    f"Transmitting to RIC {ric} at {frequency} MHz (sr={sample_rate} MHz, gain={gain} dB, power={power} dBm)",
-                )
-                emit_transmitting(message_id, ric)
-                self.logger.info("Configuring SDR for transmission")
-                self.sdr.configure(frequency, sample_rate, gain, power)
-                self.logger.info("Starting SDR transmission")
-                self.sdr.transmit(iq_samples)
-                self.logger.info(f"Transmission completed for RIC {ric}")
+                if self.encoder_handles_tx:
+                    self._update_message_status(message_id, "transmitting")
+                    self._create_log_entry(
+                        message_id,
+                        "transmitting",
+                        f"Transmitting via gr-pocsag to RIC {ric} at {frequency} MHz (baud={baud_rate})",
+                    )
+                    emit_transmitting(message_id, ric)
+                    self.encoder.encode_and_transmit(
+                        ric, message_text, message_type, baud_rate, frequency, gain, power
+                    )
+                    self.logger.info(f"Transmission completed for RIC {ric} using gr-pocsag")
+                    SystemStatus.set_hackrf_status(True)
+                else:
+                    iq_samples = self.encoder.encode(ric, message_text, message_type, baud_rate)
+                    self.logger.info(
+                        "Encoded samples generated",
+                        extra={
+                            "message_id": message_id,
+                            "ric": ric,
+                            "sample_count": len(iq_samples),
+                            "sample_dtype": str(iq_samples.dtype),
+                            "is_complex": np.iscomplexobj(iq_samples),
+                        },
+                    )
+                    self._update_message_status(message_id, "transmitting")
+                    self._create_log_entry(
+                        message_id,
+                        "transmitting",
+                        f"Transmitting to RIC {ric} at {frequency} MHz (sr={sample_rate} MHz, gain={gain} dB, power={power} dBm)",
+                    )
+                    emit_transmitting(message_id, ric)
+                    self.logger.info("Configuring SDR for transmission")
+                    self.sdr.configure(frequency, sample_rate, gain, power)
+                    self.logger.info("Starting SDR transmission")
+                    self.sdr.transmit(iq_samples)
+                    self.logger.info(f"Transmission completed for RIC {ric}")
 
             duration = time.time() - start_time
             self._update_message_status(message_id, "success")

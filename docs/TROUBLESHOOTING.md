@@ -2,8 +2,8 @@
 
 ## HackRF Not Detected
 - Symptoms: Dashboard shows Disconnected; `/health` reports `hackrf: false`.
-- Checks: USB connection; powered hub; `hackrf_info`; `SoapySDRUtil --find="driver=hackrf"`; `dmesg` for USB errors.
-- Fix: Reseat USB, different port, ensure `soapysdr-module-hackrf` installed, adequate power.
+- Checks: USB connection; powered hub; `hackrf_info`; `gnuradio-config-info --version`; `dmesg` for USB errors.
+- Fix: Reseat USB, different port, ensure `gnuradio`, `gr-osmosdr`, and HackRF drivers are installed; provide adequate power.
 
 ## Transmission Failures
 - Symptoms: Messages stuck queued/encoding; errors in logs or transmission_logs table.
@@ -13,8 +13,8 @@
 ## PDW Paging Decoder Not Receiving
 - Symptoms: RTL-SDR + PDW shows no decodes; frequency is correct.
 - Checks: FSK polarity setting; frequency accuracy; RTL-SDR tuning; PDW configuration; software version.
-- Fix: Enable "Invert FSK" in Settings tab (should be on by default); verify frequency matches exactly; check RTL-SDR gain settings; ensure PDW is set to POCSAG 512 baud mode.
-- Note: Versions prior to the LSB-first encoding fix transmitted messages with incorrect bit ordering, making them undecodable. Ensure you're running the latest version with LSB-first encoding per POCSAG standard (ITU-R M.584).
+- Fix: Enable "Invert FSK" in Settings tab (should be on by default); verify frequency matches exactly; check RTL-SDR gain settings; ensure PDW is set to the baud rate you are transmitting (default 1200 baud with gr-pocsag).
+- Note: Versions prior to the gr-pocsag integration may have produced undecodable messages. Ensure you're running the latest version.
 
 ## Web Interface Not Loading
 - Symptoms: Cannot reach `http://<ip>:5000`.
@@ -28,7 +28,7 @@
 
 ## Configuration Issues
 - Symptoms: Invalid frequency/power; config not persisting.
-- Checks: `config.json` syntax; value ranges (frequency 1-6000 MHz, power 0-15 dBm, sample rate 2-20 MHz); DB overrides in `system_config` table.
+- Checks: `config.json` syntax; value ranges (frequency 1-6000 MHz, power 0-15 dBm, sample rate 2-30 MHz); DB overrides in `system_config` table.
 - Fix: Correct values; update via API/Settings; restart service.
 
 ## Performance on Raspberry Pi

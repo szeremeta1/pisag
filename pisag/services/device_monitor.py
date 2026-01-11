@@ -71,7 +71,7 @@ class DeviceMonitor:
                 sys_cfg = cfg.get("system", {})
                 pocsag_cfg = cfg.get("pocsag", {})
                 frequency = float(sys_cfg.get("frequency", 439.9875))
-                sample_rate = float(sys_cfg.get("sample_rate", 2.0))
+                sample_rate = float(sys_cfg.get("sample_rate", 12.0))
                 gain = float(sys_cfg.get("if_gain", 40))
                 power = float(sys_cfg.get("transmit_power", 10))
                 try:

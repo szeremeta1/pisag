@@ -18,7 +18,7 @@ The web UI is a four-tab SPA at `http://<ip>:5000` with real-time Socket.IO upda
 - Pagination controls (offset/limit 50 default); Refresh button; Resend action retransmits a prior message.
 
 ## Settings
-- System config: Frequency (MHz), baud rate (512 bps), transmit power (0-15 dBm), IF gain (0-47 dB), sample rate (Hz). Save applies runtime overrides.
+- System config: Frequency (MHz), baud rate (512/1200/2400 bps), transmit power (0-15 dBm), IF gain (0-47 dB), sample rate (Hz). gr-pocsag reads these values when launching the GNU Radio flowgraph.
 - Address book: Table of pagers (name, RIC, notes) with edit/delete. Add form to create new pagers.
 
 ## REST API Examples

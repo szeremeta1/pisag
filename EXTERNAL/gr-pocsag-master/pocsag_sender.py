@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 ##################################################
 # GNU Radio Python Flow Graph
@@ -8,6 +8,8 @@
 # Generated: Mon Oct 22 21:00:22 2018
 ##################################################
 
+
+import os
 
 from gnuradio import analog
 from gnuradio import blocks
@@ -25,7 +27,19 @@ import time
 
 class pocsag_sender(gr.top_block):
 
-    def __init__(self, RIC=1122551, SubRIC=0, Text='Testmessage by HACRF One'):
+    def __init__(
+        self,
+        RIC=1122551,
+        SubRIC=0,
+        Text='Testmessage by HACRF One',
+        pagerfreq=100880000,
+        pocsagbitrate=1200,
+        tx_gain=3,
+        samp_rate=12000000,
+        symrate=38400,
+        max_deviation=4500.0,
+        af_gain=190,
+    ):
         gr.top_block.__init__(self, "POCSAG Sender via HackRF")
 
         ##################################################
@@ -38,13 +52,13 @@ class pocsag_sender(gr.top_block):
         ##################################################
         # Variables
         ##################################################
-        self.tx_gain = tx_gain = 3
-        self.symrate = symrate = 38400
-        self.samp_rate = samp_rate = 12000000
-        self.pocsagbitrate = pocsagbitrate = 1200
-        self.pagerfreq = pagerfreq = 100880000
-        self.max_deviation = max_deviation = 4500.0
-        self.af_gain = af_gain = 190
+        self.tx_gain = tx_gain
+        self.symrate = symrate
+        self.samp_rate = samp_rate
+        self.pocsagbitrate = pocsagbitrate
+        self.pagerfreq = int(pagerfreq)
+        self.max_deviation = max_deviation
+        self.af_gain = af_gain
 
         ##################################################
         # Blocks
@@ -58,7 +72,7 @@ class pocsag_sender(gr.top_block):
 
         self.osmosdr_sink_0 = osmosdr.sink( args="numchan=" + str(1) + " " + 'hackrf' )
         self.osmosdr_sink_0.set_sample_rate(samp_rate)
-        self.osmosdr_sink_0.set_center_freq(pagerfreq, 0)
+        self.osmosdr_sink_0.set_center_freq(self.pagerfreq, 0)
         self.osmosdr_sink_0.set_freq_corr(0, 0)
         self.osmosdr_sink_0.set_gain(0, 0)
         self.osmosdr_sink_0.set_if_gain(tx_gain, 0)
@@ -66,7 +80,7 @@ class pocsag_sender(gr.top_block):
         self.osmosdr_sink_0.set_antenna('', 0)
         self.osmosdr_sink_0.set_bandwidth(0, 0)
 
-        self.blocks_repeat_0 = blocks.repeat(gr.sizeof_char*1, symrate/pocsagbitrate)
+        self.blocks_repeat_0 = blocks.repeat(gr.sizeof_char*1, int(symrate // pocsagbitrate))
         self.blocks_multiply_const_vxx_0 = blocks.multiply_const_vcc((af_gain/100, ))
         self.blocks_char_to_float_0 = blocks.char_to_float(1, af_gain*0.7/1000)
         self.analog_frequency_modulator_fc_0 = analog.frequency_modulator_fc(2.0 * math.pi * max_deviation / float(symrate))
@@ -114,7 +128,7 @@ class pocsag_sender(gr.top_block):
     def set_symrate(self, symrate):
         self.symrate = symrate
         self.pfb_arb_resampler_xxx_0.set_rate(float(self.samp_rate)/float(self.symrate))
-        self.blocks_repeat_0.set_interpolation(self.symrate/self.pocsagbitrate)
+        self.blocks_repeat_0.set_interpolation(int(self.symrate // self.pocsagbitrate))
         self.analog_frequency_modulator_fc_0.set_sensitivity(2.0 * math.pi * self.max_deviation / float(self.symrate))
 
     def get_samp_rate(self):
@@ -130,7 +144,7 @@ class pocsag_sender(gr.top_block):
 
     def set_pocsagbitrate(self, pocsagbitrate):
         self.pocsagbitrate = pocsagbitrate
-        self.blocks_repeat_0.set_interpolation(self.symrate/self.pocsagbitrate)
+        self.blocks_repeat_0.set_interpolation(int(self.symrate // self.pocsagbitrate))
 
     def get_pagerfreq(self):
         return self.pagerfreq
@@ -167,6 +181,27 @@ def argument_parser():
     parser.add_option(
         "", "--Text", dest="Text", type="string", default='Testmessage by HACRF One',
         help="Set Testmessage by HACRF One [default=%default]")
+    parser.add_option(
+        "", "--Frequency", dest="Frequency", type="float", default=float(os.environ.get("PISAG_GR_POCSAG_FREQ_MHZ", 100.88)),
+        help="Set center frequency in MHz [default=%default]")
+    parser.add_option(
+        "", "--Bitrate", dest="Bitrate", type="intx", default=int(os.environ.get("PISAG_GR_POCSAG_BITRATE", 1200)),
+        help="Set POCSAG bitrate (512/1200/2400) [default=%default]")
+    parser.add_option(
+        "", "--TXGain", dest="TXGain", type="intx", default=int(float(os.environ.get("PISAG_GR_POCSAG_TX_GAIN", 3))),
+        help="Set HackRF TX gain [default=%default]")
+    parser.add_option(
+        "", "--SampleRate", dest="SampleRate", type="intx", default=int(os.environ.get("PISAG_GR_POCSAG_SAMPLE_RATE", 12000000)),
+        help="Set sample rate (Hz) [default=%default]")
+    parser.add_option(
+        "", "--AFGain", dest="AFGain", type="float", default=float(os.environ.get("PISAG_GR_POCSAG_AF_GAIN", 190)),
+        help="Set audio gain scaling [default=%default]")
+    parser.add_option(
+        "", "--MaxDeviation", dest="MaxDeviation", type="float", default=float(os.environ.get("PISAG_GR_POCSAG_MAX_DEVIATION", 4500.0)),
+        help="Set max deviation [default=%default]")
+    parser.add_option(
+        "", "--Symrate", dest="Symrate", type="intx", default=int(os.environ.get("PISAG_GR_POCSAG_SYMRATE", 38400)),
+        help="Set symbol rate [default=%default]")
     return parser
 
 
@@ -174,7 +209,18 @@ def main(top_block_cls=pocsag_sender, options=None):
     if options is None:
         options, _ = argument_parser().parse_args()
 
-    tb = top_block_cls(RIC=options.RIC, SubRIC=options.SubRIC, Text=options.Text)
+    tb = top_block_cls(
+        RIC=options.RIC,
+        SubRIC=options.SubRIC,
+        Text=options.Text,
+        pagerfreq=int(float(options.Frequency) * 1e6),
+        pocsagbitrate=int(options.Bitrate),
+        tx_gain=int(options.TXGain),
+        samp_rate=int(options.SampleRate),
+        symrate=int(options.Symrate),
+        max_deviation=float(options.MaxDeviation),
+        af_gain=float(options.AFGain),
+    )
     tb.start()
     tb.wait()
 

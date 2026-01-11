@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-systemctl status "$SERVICE_NAME" --no-pager
-echo "Install complete. Logs: journalctl -u $SERVICE_NAME -f"
 APP_DIR="/opt/pisag"
 VENV_DIR="$APP_DIR/venv"
 REPO_URL="${REPO_URL:-"https://github.com/<repo>/pisag.git"}"
@@ -11,8 +9,7 @@ SERVICE_NAME="pisag.service"
 PYTHON_BIN="python3"
 APT_PACKAGES=(
   python3 python3-pip python3-venv git sqlite3 build-essential
-  hackrf libhackrf-dev
-  soapysdr-tools libsoapysdr-dev soapysdr-module-hackrf
+  hackrf libhackrf-dev gnuradio gr-osmosdr python3-gnuradio
 )
 
 if [[ $EUID -ne 0 ]]; then
@@ -150,15 +147,11 @@ else
   echo "hackrf_info not found; ensure hackrf package installed" >&2
 fi
 
-echo "Checking SoapySDR HackRF binding..."
-if command -v SoapySDRUtil >/dev/null 2>&1; then
-  if SoapySDRUtil --find="driver=hackrf"; then
-    echo "SoapySDRUtil detected HackRF"
-  else
-    echo "SoapySDRUtil did not detect HackRF; driver may be missing" >&2
-  fi
+echo "Checking GNU Radio installation..."
+if command -v gnuradio-config-info >/dev/null 2>&1; then
+  gnuradio-config-info --version || echo "gnuradio-config-info failed; verify GNU Radio installation" >&2
 else
-  echo "SoapySDRUtil not found; ensure soapysdr-tools installed" >&2
+  echo "gnuradio-config-info not found; ensure gnuradio is installed" >&2
 fi
 
 # Create logs dir and adjust permissions

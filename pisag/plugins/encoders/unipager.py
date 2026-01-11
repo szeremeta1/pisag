@@ -33,7 +33,8 @@ class UniPagerEncoder(POCSAGEncoder):
     - Or linking to UniPager as a shared library (ctypes)
     
     For now, this falls back to PurePythonEncoder which produces
-    identical output after the fix.
+    identical output after the fix. A full integration would mirror UniPager's
+    Rust encoder directly.
     """
     
     def __init__(self, config_path: str = "config.json") -> None:
@@ -45,8 +46,7 @@ class UniPagerEncoder(POCSAGEncoder):
         cfg = get_config(config_path)
         system_cfg = cfg.get("system", {})
         pocsag_cfg = cfg.get("pocsag", {})
-        
-        self.sample_rate_hz = float(system_cfg.get("sample_rate", 2.0)) * 1_000_000.0
+        self.sample_rate_hz = float(system_cfg.get("sample_rate", 12.0)) * 1_000_000.0
         self.deviation_hz = float(pocsag_cfg.get("deviation", 4.5)) * 1_000.0
         self.invert_fsk = bool(pocsag_cfg.get("invert", False))
         self.logger = get_logger(__name__)

@@ -19,3 +19,4 @@ eventlet
 
 # Utilities
 python-dotenv==1.2.1
+bitstring==4.1.4

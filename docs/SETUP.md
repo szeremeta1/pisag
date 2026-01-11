@@ -12,13 +12,12 @@ Step-by-step installation for Raspberry Pi 3/4 with Raspberry Pi OS.
 sudo apt-get update && sudo apt-get upgrade -y
 sudo apt-get install -y \
   python3 python3-pip python3-venv git sqlite3 \
-  hackrf libhackrf-dev \
-  soapysdr-tools libsoapysdr-dev soapysdr-module-hackrf
+  hackrf libhackrf-dev gnuradio gr-osmosdr python3-gnuradio
 ```
 Verify hardware:
 ```bash
 hackrf_info
-SoapySDRUtil --find="driver=hackrf"
+gnuradio-config-info --version
 ```
 
 ## Manual Installation
@@ -42,8 +41,8 @@ python scripts/seed_data.py
 # Optional DB smoke test
 python scripts/test_database.py
 
-# Configure defaults
-nano config.json   # set frequency, power, etc.
+# Configure defaults (frequency, power, baud, gr-pocsag path)
+nano config.json
 
 # Run
 python -m pisag.app
