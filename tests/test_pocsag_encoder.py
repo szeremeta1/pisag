@@ -56,14 +56,14 @@ def test_encode_and_transmit_respects_dry_run(tmp_path, monkeypatch):
     monkeypatch.setenv("PISAG_GR_POCSAG_DRY_RUN", "1")
     calls: list[list[str]] = []
 
-    def fake_run(cmd, check, env):
+    def fake_run(cmd, check, env, **kwargs):
         calls.append(cmd)
         raise AssertionError("subprocess should not be called when dry_run is enabled")
 
     monkeypatch.setattr(subprocess, "run", fake_run)
 
     encoder = GrPocsagEncoder(config_path=str(cfg_path))
-    encoder.encode_and_transmit("7654321", "Test", "alphanumeric", 1200, 439.1, 20, 5)
+    encoder.encode_and_transmit("1234567", "Test", "alphanumeric", 1200, 439.1, 20, 5)
 
     assert calls == []
     monkeypatch.delenv("PISAG_GR_POCSAG_DRY_RUN", raising=False)

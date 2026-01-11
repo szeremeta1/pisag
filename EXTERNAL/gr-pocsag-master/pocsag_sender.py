@@ -56,7 +56,7 @@ class pocsag_sender(gr.top_block):
         self.symrate = symrate
         self.samp_rate = samp_rate
         self.pocsagbitrate = pocsagbitrate
-        self.pagerfreq = int(pagerfreq)
+        self.pagerfreq = float(pagerfreq)
         self.max_deviation = max_deviation
         self.af_gain = af_gain
 
@@ -80,7 +80,8 @@ class pocsag_sender(gr.top_block):
         self.osmosdr_sink_0.set_antenna('', 0)
         self.osmosdr_sink_0.set_bandwidth(0, 0)
 
-        self.blocks_repeat_0 = blocks.repeat(gr.sizeof_char*1, int(symrate // pocsagbitrate))
+        repeat_factor = self._repeat_factor()
+        self.blocks_repeat_0 = blocks.repeat(gr.sizeof_char*1, repeat_factor)
         self.blocks_multiply_const_vxx_0 = blocks.multiply_const_vcc((af_gain/100, ))
         self.blocks_char_to_float_0 = blocks.char_to_float(1, af_gain*0.7/1000)
         self.analog_frequency_modulator_fc_0 = analog.frequency_modulator_fc(2.0 * math.pi * max_deviation / float(symrate))
@@ -128,7 +129,7 @@ class pocsag_sender(gr.top_block):
     def set_symrate(self, symrate):
         self.symrate = symrate
         self.pfb_arb_resampler_xxx_0.set_rate(float(self.samp_rate)/float(self.symrate))
-        self.blocks_repeat_0.set_interpolation(int(self.symrate // self.pocsagbitrate))
+        self.blocks_repeat_0.set_interpolation(self._repeat_factor())
         self.analog_frequency_modulator_fc_0.set_sensitivity(2.0 * math.pi * self.max_deviation / float(self.symrate))
 
     def get_samp_rate(self):
@@ -144,7 +145,7 @@ class pocsag_sender(gr.top_block):
 
     def set_pocsagbitrate(self, pocsagbitrate):
         self.pocsagbitrate = pocsagbitrate
-        self.blocks_repeat_0.set_interpolation(int(self.symrate // self.pocsagbitrate))
+        self.blocks_repeat_0.set_interpolation(self._repeat_factor())
 
     def get_pagerfreq(self):
         return self.pagerfreq
@@ -167,6 +168,9 @@ class pocsag_sender(gr.top_block):
         self.af_gain = af_gain
         self.blocks_multiply_const_vxx_0.set_k((self.af_gain/100, ))
         self.blocks_char_to_float_0.set_scale(self.af_gain*0.7/1000)
+
+    def _repeat_factor(self):
+        return max(1, int(round(float(self.symrate) / float(self.pocsagbitrate))))
 
 
 def argument_parser():
@@ -213,7 +217,7 @@ def main(top_block_cls=pocsag_sender, options=None):
         RIC=options.RIC,
         SubRIC=options.SubRIC,
         Text=options.Text,
-        pagerfreq=int(float(options.Frequency) * 1e6),
+        pagerfreq=float(options.Frequency) * 1e6,
         pocsagbitrate=int(options.Bitrate),
         tx_gain=int(options.TXGain),
         samp_rate=int(options.SampleRate),

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
-from pisag.config import get_config, reload_config
+from pisag.config import SUPPORTED_POCSAG_BAUD, get_config, reload_config
 from pisag.models import SystemConfig
 from pisag.utils.logging import get_logger
 from pisag.utils.validation import (
@@ -52,8 +52,8 @@ class ConfigService:
 
         if "baud_rate" in pocsag_updates:
             baud = int(pocsag_updates["baud_rate"])
-            if baud not in {512, 1200, 2400}:
-                raise ValueError("POCSAG baud rate must be 512, 1200, or 2400 baud")
+            if baud not in SUPPORTED_POCSAG_BAUD:
+                raise ValueError(f"POCSAG baud rate must be one of {SUPPORTED_POCSAG_BAUD}")
             validated["pocsag.baud_rate"] = (baud, "int")
 
         if "invert" in pocsag_updates:

@@ -8,6 +8,8 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict
 
+SUPPORTED_POCSAG_BAUD = (512, 1200, 2400)
+
 _DEFAULT_CONFIG: Dict[str, Any] = {
     "system": {
         "frequency": 439.9875,
@@ -18,7 +20,7 @@ _DEFAULT_CONFIG: Dict[str, Any] = {
         "log_level": "INFO",
     },
     "pocsag": {
-        "baud_rate": 1200,
+        "baud_rate": SUPPORTED_POCSAG_BAUD[1],
         "deviation": 4.5,
         "invert": False,
     },
@@ -170,5 +172,5 @@ def _validate(cfg: Dict[str, Any]) -> None:
         raise ConfigurationError("Sample rate must be between 2 and 30 MHz.")
 
     baud_rate = int(cfg["pocsag"]["baud_rate"])
-    if baud_rate not in {512, 1200, 2400}:
-        raise ConfigurationError("POCSAG baud rate must be 512, 1200, or 2400 baud.")
+    if baud_rate not in SUPPORTED_POCSAG_BAUD:
+        raise ConfigurationError(f"POCSAG baud rate must be one of {SUPPORTED_POCSAG_BAUD}.")

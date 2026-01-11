@@ -39,7 +39,9 @@ class TransmissionWorker:
         sdr_class = self.config.get("plugins", {}).get("sdr_interface")
         self.encoder = load_plugin("encoder", encoder_class)
         self.sdr = load_plugin("sdr", sdr_class)
-        self.encoder_handles_tx = hasattr(self.encoder, "encode_and_transmit")
+        self.encoder_handles_tx = bool(getattr(self.encoder, "handles_transmit", False))
+        if not self.encoder_handles_tx:
+            self.encoder_handles_tx = callable(getattr(self.encoder, "encode_and_transmit", None))
 
     # Lifecycle -----------------------------------------------------------
     def start(self) -> None:
@@ -49,8 +51,9 @@ class TransmissionWorker:
         if not self.encoder_handles_tx:
             try:
                 connected = self.sdr.connect()
-            except Exception:
+            except Exception as exc:
                 connected = False
+                self.logger.warning("SDR connect failed at startup", exc_info=True, extra={"error": str(exc)})
         else:
             connected = True
 
@@ -135,18 +138,19 @@ class TransmissionWorker:
                     f"Processing recipient {idx}/{len(recipients)}: RIC {ric}",
                     extra={"message_id": message_id, "ric": ric, "recipient_index": idx},
                 )
+                encoder_name = self.encoder.__class__.__name__
                 if self.encoder_handles_tx:
                     self._update_message_status(message_id, "transmitting")
                     self._create_log_entry(
                         message_id,
                         "transmitting",
-                        f"Transmitting via gr-pocsag to RIC {ric} at {frequency} MHz (baud={baud_rate})",
+                        f"Transmitting via {encoder_name} to RIC {ric} at {frequency} MHz (baud={baud_rate})",
                     )
                     emit_transmitting(message_id, ric)
                     self.encoder.encode_and_transmit(
                         ric, message_text, message_type, baud_rate, frequency, gain, power
                     )
-                    self.logger.info(f"Transmission completed for RIC {ric} using gr-pocsag")
+                    self.logger.info(f"Transmission completed for RIC {ric} using {encoder_name}")
                     SystemStatus.set_hackrf_status(True)
                 else:
                     iq_samples = self.encoder.encode(ric, message_text, message_type, baud_rate)

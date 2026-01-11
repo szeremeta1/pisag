@@ -8,7 +8,7 @@ import subprocess
 from pathlib import Path
 from typing import List
 
-from pisag.config import get_config
+from pisag.config import SUPPORTED_POCSAG_BAUD, get_config
 from pisag.plugins.base import EncodingError, POCSAGEncoder, TransmissionError
 from pisag.utils.logging import get_logger
 
@@ -26,8 +26,18 @@ class GrPocsagEncoder(POCSAGEncoder):
 
         script = self.gr_cfg.get("script_path", "EXTERNAL/gr-pocsag-master/pocsag_sender.py")
         self.script_path = Path(script).expanduser().resolve()
+        if not self.script_path.exists():
+            raise EncodingError(
+                f"gr-pocsag script not found at {self.script_path}. "
+                "Set gr_pocsag.script_path in config.json to the pocsag_sender.py location."
+            )
         self.use_subprocess = bool(self.gr_cfg.get("use_subprocess", True))
-        self.dry_run = bool(self.gr_cfg.get("dry_run", False) or os.getenv("PISAG_GR_POCSAG_DRY_RUN"))
+        self.handles_transmit = True
+        self.python_bin = os.getenv("PISAG_PYTHON", "python3")  # override interpreter if needed
+        env_dry = os.getenv("PISAG_GR_POCSAG_DRY_RUN")
+        self.dry_run = bool(self.gr_cfg.get("dry_run", False))
+        if env_dry is not None:
+            self.dry_run = env_dry.lower() in {"1", "true", "yes"}
         self.subric = int(self.gr_cfg.get("subric", 0))
         self.af_gain = float(self.gr_cfg.get("af_gain", 190))
         self.max_deviation = float(self.gr_cfg.get("max_deviation", 4500.0))
@@ -77,11 +87,16 @@ class GrPocsagEncoder(POCSAGEncoder):
             return
 
         try:
-            subprocess.run(cmd, check=True, env=env)
+            result = subprocess.run(cmd, check=True, env=env, capture_output=True, text=True)
+            return result
         except FileNotFoundError as exc:
-            raise TransmissionError(f"gr-pocsag script not found at {self.script_path}") from exc
+            raise TransmissionError(
+                f"gr-pocsag script not found at {self.script_path}. "
+                "Verify GNU Radio is installed and update gr_pocsag.script_path."
+            ) from exc
         except subprocess.CalledProcessError as exc:  # pragma: no cover - requires GNU Radio runtime
-            raise TransmissionError(f"gr-pocsag failed: {exc}") from exc
+            stderr = (exc.stderr or "").strip()
+            raise TransmissionError(f"gr-pocsag failed (rc={exc.returncode}): {stderr or exc}") from exc
 
     # Helpers --------------------------------------------------------------
     def _build_command(
@@ -89,7 +104,7 @@ class GrPocsagEncoder(POCSAGEncoder):
     ) -> List[str]:
         script = str(self.script_path)
         return [
-            os.getenv("PISAG_PYTHON", "python3"),
+            self.python_bin,
             script,
             "--RIC",
             str(int(ric)),
@@ -108,9 +123,12 @@ class GrPocsagEncoder(POCSAGEncoder):
     def _validate_inputs(self, ric: str, message: str, message_type: str, baud_rate: int) -> None:
         if not isinstance(ric, str) or not ric.isdigit() or not (1 <= len(ric) <= 7):
             raise ValueError("RIC must be a digit string of length 1-7")
+        ric_val = int(ric)
+        if ric_val < 0 or ric_val > 2_097_151:
+            raise ValueError("RIC out of range (0-2,097,151)")
         if message_type not in {"alphanumeric", "numeric"}:
             raise ValueError("message_type must be 'alphanumeric' or 'numeric'")
-        if baud_rate not in {512, 1200, 2400}:
-            raise ValueError("POCSAG baud rate must be 512, 1200, or 2400")
+        if baud_rate not in SUPPORTED_POCSAG_BAUD:
+            raise ValueError(f"POCSAG baud rate must be one of {SUPPORTED_POCSAG_BAUD}")
         if not message:
             raise ValueError("Message text is required")
