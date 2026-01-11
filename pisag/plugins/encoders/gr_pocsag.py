@@ -117,7 +117,7 @@ class GrPocsagEncoder(POCSAGEncoder):
             "--Bitrate",
             str(int(baud_rate)),
             "--TXGain",
-            str(float(gain_db)),
+            str(int(round(gain_db))),  # external script requires integer gain
         ]
 
     def _validate_inputs(self, ric: str, message: str, message_type: str, baud_rate: int) -> None:
