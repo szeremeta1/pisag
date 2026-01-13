@@ -246,6 +246,14 @@ def update_config_endpoint():
         return _error_response("Database unavailable", 503)
 
 
+@api_blueprint.route("/config/encoders", methods=["GET"])
+def get_encoders_endpoint():
+    """Return available POCSAG encoder options for UI selection."""
+    cfg_service = ConfigService()
+    encoders = cfg_service.get_available_encoders()
+    return jsonify({"encoders": encoders})
+
+
 # Analytics endpoint ------------------------------------------------------
 
 @api_blueprint.route("/analytics", methods=["GET"])

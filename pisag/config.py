@@ -12,7 +12,7 @@ SUPPORTED_POCSAG_BAUD = (512, 1200, 2400)
 
 _DEFAULT_CONFIG: Dict[str, Any] = {
     "system": {
-        "frequency": 439.9875,
+        "frequency": 929.6125,  # Motorola ADVISOR II™ compatible (929-932 MHz band)
         "transmit_power": 10,
         "if_gain": 40,
         "sample_rate": 12.0,

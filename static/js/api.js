@@ -73,6 +73,10 @@ export async function getConfig() {
   return request('GET', '/config');
 }
 
+export async function getEncoders() {
+  return request('GET', '/config/encoders');
+}
+
 export async function updateConfig(config) {
   return request('PUT', '/config', config);
 }

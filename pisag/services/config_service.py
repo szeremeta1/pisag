@@ -14,6 +14,13 @@ from pisag.utils.validation import (
 )
 
 
+# Supported POCSAG encoder plugins
+SUPPORTED_ENCODERS = {
+    "gr_pocsag": "pisag.plugins.encoders.gr_pocsag.GrPocsagEncoder",
+    "pure_python": "pisag.plugins.encoders.pure_python.PurePythonEncoder",
+}
+
+
 class ConfigService:
     def __init__(self) -> None:
         self.logger = get_logger(__name__)
@@ -21,9 +28,14 @@ class ConfigService:
     def get_configuration(self, config_path: str = "config.json") -> Dict[str, Any]:
         return get_config(config_path)
 
+    def get_available_encoders(self) -> Dict[str, str]:
+        """Return available encoder options for UI selection."""
+        return SUPPORTED_ENCODERS.copy()
+
     def update_configuration(self, session, updates: Dict[str, Any], config_path: str = "config.json") -> Dict[str, Any]:
         system_updates = updates.get("system", {})
         pocsag_updates = updates.get("pocsag", {})
+        plugins_updates = updates.get("plugins", {})
         validated: Dict[str, tuple[Any, str]] = {}
 
         if "frequency" in system_updates:
@@ -59,6 +71,17 @@ class ConfigService:
         if "invert" in pocsag_updates:
             invert = bool(pocsag_updates["invert"])
             validated["pocsag.invert"] = (invert, "bool")
+
+        if "pocsag_encoder" in plugins_updates:
+            encoder_key = plugins_updates["pocsag_encoder"]
+            # Accept either short key or full class path
+            if encoder_key in SUPPORTED_ENCODERS:
+                encoder_class = SUPPORTED_ENCODERS[encoder_key]
+            elif encoder_key in SUPPORTED_ENCODERS.values():
+                encoder_class = encoder_key
+            else:
+                raise ValueError(f"Encoder must be one of {list(SUPPORTED_ENCODERS.keys())}")
+            validated["plugins.pocsag_encoder"] = (encoder_class, "str")
 
         for key, (value, value_type) in validated.items():
             SystemConfig.set_config(session, key, value, value_type)
