@@ -1,5 +1,6 @@
 import {
   getConfig,
+  getEncoders,
   updateConfig,
   getPagers,
   createPager,
@@ -9,12 +10,24 @@ import {
 
 const el = (id) => document.querySelector(`[data-element-id="${id}"]`);
 
+// Encoder short names to full class path mapping
+const ENCODER_CLASS_MAP = {
+  'gr_pocsag': 'pisag.plugins.encoders.gr_pocsag.GrPocsagEncoder',
+  'pure_python': 'pisag.plugins.encoders.pure_python.PurePythonEncoder'
+};
+
+// Reverse mapping from class path to short name
+const ENCODER_SHORT_NAME_MAP = Object.fromEntries(
+  Object.entries(ENCODER_CLASS_MAP).map(([k, v]) => [v, k])
+);
+
 const elements = {
   frequency: null,
   baudRate: null,
   power: null,
   gain: null,
   sampleRate: null,
+  encoder: null,
   invertFsk: null,
   saveButton: null,
   addressBookBody: null,
@@ -45,8 +58,8 @@ function validateConfig(systemValues) {
   const gain = systemValues.if_gain;
   const sampleRate = systemValues.sample_rate;
 
-  if (frequency <= 0 || frequency < 100 || frequency > 1000) {
-    throw new Error('Frequency should be between 100 and 1000 MHz.');
+  if (frequency <= 0 || frequency < 1 || frequency > 6000) {
+    throw new Error('Frequency should be between 1 and 6000 MHz.');
   }
   if (power < 0 || power > 15) {
     throw new Error('Power must be between 0 and 15 dBm.');
@@ -77,12 +90,18 @@ async function loadConfig() {
     const config = await getConfig();
     const system = config.system || {};
     const pocsag = config.pocsag || {};
+    const plugins = config.plugins || {};
     elements.frequency.value = system.frequency ?? '';
     elements.baudRate.value = pocsag.baud_rate ?? '';
     elements.power.value = system.transmit_power ?? '';
     elements.gain.value = system.if_gain ?? '';
     elements.sampleRate.value = system.sample_rate ?? '';
     elements.invertFsk.checked = pocsag.invert ?? false;
+    
+    // Set encoder selection based on current config
+    const currentEncoder = plugins.pocsag_encoder || '';
+    const shortName = ENCODER_SHORT_NAME_MAP[currentEncoder] || 'gr_pocsag';
+    elements.encoder.value = shortName;
   } catch (err) {
     reportError(err.message || 'Failed to load configuration');
   }
@@ -126,6 +145,9 @@ async function saveConfig() {
       pocsag: {
         baud_rate: Number(elements.baudRate.value),
         invert: elements.invertFsk.checked
+      },
+      plugins: {
+        pocsag_encoder: elements.encoder.value
       }
     };
     validateConfig(values.system);
@@ -222,6 +244,7 @@ export async function init() {
   elements.power = el('power-input');
   elements.gain = el('gain-input');
   elements.sampleRate = el('sample-rate-input');
+  elements.encoder = el('encoder-select');
   elements.invertFsk = el('invert-fsk-checkbox');
   elements.saveButton = el('save-system-config');
   elements.addressBookBody = el('address-book-body');

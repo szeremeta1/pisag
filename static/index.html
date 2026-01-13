@@ -232,7 +232,8 @@
                         <label for="baud-rate-select">Baud Rate</label>
                         <select id="baud-rate-select" data-element-id="baud-rate-select">
                             <option value="512">512 bps</option>
-                            <option value="1200">1200 bps</option>
+                            <option value="1200" selected>1200 bps</option>
+                            <option value="2400">2400 bps</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -249,6 +250,14 @@
                         <label for="sample-rate-input">Sample Rate (MHz)</label>
                         <input id="sample-rate-input" data-element-id="sample-rate-input" type="number" step="0.1" min="2" max="20" placeholder="Typical: 2.0">
                         <p class="hint">Typical: 2.0 MHz.</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="encoder-select">POCSAG Encoder</label>
+                        <select id="encoder-select" data-element-id="encoder-select">
+                            <option value="gr_pocsag">GNU Radio (gr-pocsag)</option>
+                            <option value="pure_python">Pure Python</option>
+                        </select>
+                        <p class="hint">gr-pocsag uses GNU Radio with HackRF; Pure Python generates IQ samples directly.</p>
                     </div>
                     <div class="form-group">
                         <label for="invert-fsk-checkbox">

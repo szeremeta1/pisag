@@ -1,6 +1,6 @@
 {
   "system": {
-    "frequency": 439.9875,
+    "frequency": 929.6125,
     "transmit_power": 10,
     "if_gain": 40,
     "sample_rate": 12.0,

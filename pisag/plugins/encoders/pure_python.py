@@ -15,6 +15,9 @@ useful. See the `encode` docstring for a walkthrough of the full pipeline.
 IMPORTANT: Alphanumeric and numeric messages are encoded LSB-first per the POCSAG
 standard (ITU-R M.584), ensuring compatibility with PDW Paging Decoder and other
 standard POCSAG receivers.
+
+This encoder supports the Motorola ADVISOR II™ POCSAG Alpha-numeric Pager
+(model A05DTS5962AA) operating at 929-932 MHz with 512, 1200, or 2400 baud rates.
 """
 
 from __future__ import annotations
@@ -24,7 +27,7 @@ from typing import List
 
 import numpy as np
 
-from pisag.config import get_config
+from pisag.config import SUPPORTED_POCSAG_BAUD, get_config
 from pisag.plugins.base import EncodingError, POCSAGEncoder
 from pisag.utils.logging import get_logger
 
@@ -66,7 +69,8 @@ class PurePythonEncoder(POCSAGEncoder):
             ric: 1-7 digit receiver identifier (RIC).
             message: Message text to transmit.
             message_type: "alphanumeric" (7-bit ASCII) or "numeric" (BCD).
-            baud_rate: Only 512 is supported per project requirements.
+            baud_rate: POCSAG baud rate (512, 1200, or 2400). Default is 1200 for
+                Motorola ADVISOR II™ compatibility.
 
         Returns:
             Complex IQ samples (np.complex64) representing the modulated signal.
@@ -124,8 +128,8 @@ class PurePythonEncoder(POCSAGEncoder):
         if message_type not in {"alphanumeric", "numeric"}:
             raise ValueError("message_type must be 'alphanumeric' or 'numeric'")
 
-        if baud_rate != 512:
-            raise ValueError("Only 512 baud is supported")
+        if baud_rate not in SUPPORTED_POCSAG_BAUD:
+            raise ValueError(f"POCSAG baud rate must be one of {SUPPORTED_POCSAG_BAUD}")
 
         if message_type == "alphanumeric":
             for ch in message:
