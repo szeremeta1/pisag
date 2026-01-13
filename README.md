@@ -2,10 +2,16 @@
 
 Educational, hobby-friendly POCSAG pager transmission system for Raspberry Pi + HackRF One. PISAG provides a lightweight, extensible foundation for encoding and transmitting pager messages with a plugin-driven architecture, real-time web UI, and REST/SocketIO APIs. Built for learning and experimentation—use responsibly and legally.
 
+## Supported Devices
+- **Motorola ADVISOR II™** (model A05DTS5962AA) at 929-932 MHz
+- Other POCSAG-compatible pagers at VHF/UHF frequencies
+
 ## Key Features
 - Web SPA with live status, send, history, settings tabs (Socket.IO real-time updates)
 - REST API for send/history/pagers/config/analytics/status + health/readiness endpoints
-- Plugin architecture for POCSAG encoder and SDR backends (gr-pocsag + HackRF by default)
+- Plugin architecture for POCSAG encoder and SDR backends
+- **Two encoder options**: GNU Radio (gr-pocsag) or Pure Python encoder
+- Switchable encoders via web UI and config API
 - Transmission queue + worker thread with device monitor, pause/resume, and rich logging
 - Hybrid configuration (JSON defaults + DB overrides) with runtime updates
 - SQLite + Alembic migrations; transmission logs and analytics

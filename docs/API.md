@@ -35,8 +35,13 @@ Error format: `{ "error": "message", "timestamp": "ISO8601", "details": {...} }`
   - Responses: 200 success; 503 DB unavailable
 
 - **PUT /api/config** — Update configuration
-  - Body: `{ "system": { "frequency": 440.0, "transmit_power": 12 } }`
+  - Body: `{ "system": { "frequency": 929.6125, "transmit_power": 12 }, "plugins": { "pocsag_encoder": "pure_python" } }`
+  - Supports both short encoder names (`gr_pocsag`, `pure_python`) and full class paths
   - Responses: 200 success; 400 validation; 503 DB unavailable
+
+- **GET /api/config/encoders** — Get available POCSAG encoders
+  - Response: `{ "encoders": { "gr_pocsag": "...", "pure_python": "..." } }`
+  - Responses: 200 success
 
 - **GET /api/analytics** — Get analytics
   - Responses: 200 success; 503 DB unavailable
