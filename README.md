@@ -1,6 +1,11 @@
 # PISAG - POCSAG Pager Server
 
-Educational, hobby-friendly POCSAG pager transmission system for Raspberry Pi + HackRF One. PISAG provides a lightweight, extensible foundation for encoding and transmitting pager messages with a plugin-driven architecture, real-time web UI, and REST/SocketIO APIs. Built for learning and experimentation—use responsibly and legally.
+Educational, hobby-friendly POCSAG pager transmission system for **Windows, Linux, and Raspberry Pi** with HackRF One. PISAG provides a lightweight, extensible foundation for encoding and transmitting pager messages with a plugin-driven architecture, real-time web UI, and REST/SocketIO APIs. Built for learning and experimentation—use responsibly and legally.
+
+## Platform Support
+- ✅ **Windows 10/11** - Full support with superior performance
+- ✅ **Linux** - Full support (Ubuntu, Debian, etc.)
+- ✅ **Raspberry Pi** - Optimized for Pi 3/4 with Raspberry Pi OS
 
 ## Supported Devices
 - **Motorola ADVISOR II™** (model A05DTS5962AA) at 929-932 MHz
@@ -20,21 +25,50 @@ Educational, hobby-friendly POCSAG pager transmission system for Raspberry Pi + 
 - **GNU Radio + gr-pocsag pipeline** - Proven HackRF/POCSAG flowgraph decodable on PDW and real pagers
 
 ## Hardware Requirements
-- Raspberry Pi 3 or newer
+- **For Windows/Linux PC**: Modern x86_64 computer with USB 2.0/3.0 port
+- **For Raspberry Pi**: Raspberry Pi 3 or newer (Pi 4 recommended)
 - HackRF One with appropriate antenna and USB cable
-- Optional powered USB hub for stable power
+- Optional powered USB hub for stable power delivery
 
 ## Software Requirements
-- Python 3.9+
-- GNU Radio + gr-osmosdr with HackRF support (`gnuradio`, `gr-osmosdr`, `python3-gnuradio`, `hackrf`, `libhackrf-dev`)
-- bitstring (installed via pip)
-- SQLite (bundled on Raspberry Pi OS)
-- System build deps for NumPy/GNU Radio
 
-## Quick Start (summary)
-1) Install deps (Pi): `sudo apt-get update && sudo apt-get install -y python3 python3-venv python3-pip sqlite3 hackrf libhackrf-dev gnuradio gr-osmosdr python3-gnuradio`
-2) Clone and install:
+### All Platforms
+- Python 3.9+
+- HackRF drivers and tools
+- SoapySDR (SDR interface library)
+- SQLite (usually pre-installed)
+
+### Platform-Specific
+- **Windows**: PothosSDR suite, Zadig WinUSB drivers
+- **Linux/Raspberry Pi**: GNU Radio + gr-osmosdr packages
+
+## Quick Start
+
+Choose your platform:
+
+### 🪟 Windows (PowerShell as Administrator)
+```powershell
+# Prerequisites: Python 3.9+, Git, HackRF drivers, PothosSDR
+# Download installer and run
+irm https://raw.githubusercontent.com/szeremeta1/pisag/main/install.ps1 | iex
+```
+Or download and run locally:
+```powershell
+git clone https://github.com/szeremeta1/pisag C:\pisag
+cd C:\pisag
+powershell -ExecutionPolicy Bypass -File install.ps1
+# Follow prompts, then run start.bat
+```
+See **[docs/SETUP_WINDOWS.md](docs/SETUP_WINDOWS.md)** for detailed Windows setup.
+
+### 🐧 Linux / Raspberry Pi
 ```bash
+# Install system dependencies
+sudo apt-get update && sudo apt-get install -y \
+  python3 python3-venv python3-pip sqlite3 \
+  hackrf libhackrf-dev gnuradio gr-osmosdr python3-gnuradio
+
+# Clone and install
 git clone https://github.com/szeremeta1/pisag /opt/pisag
 cd /opt/pisag
 python3 -m venv venv
@@ -43,9 +77,9 @@ pip install -r requirements.txt
 alembic upgrade head
 python -m pisag.app
 ```
-3) Browse to `http://<raspberry-pi-ip>:5000`
+Browse to `http://<device-ip>:5000`
 
-For full setup, see [docs/SETUP.md](docs/SETUP.md).
+See **[docs/SETUP.md](docs/SETUP.md)** for detailed Linux/Raspberry Pi setup.
 
 ## Project Structure
 ```
@@ -55,20 +89,54 @@ pisag/
   services/           # Business logic, worker, queue, monitor, status manager
   plugins/            # Encoder/SDR plugin interfaces and implementations
   models/             # SQLAlchemy ORM models + Alembic migrations
-  utils/              # Logging, database helpers
+  utils/              # Logging, database helpers, platform detection
   config.py           # JSON+DB configuration loader
 static/               # Vanilla JS SPA frontend
 scripts/              # Seed/test helpers
 logs/                 # Rotating application logs
 config.json           # Default configuration
 docs/                 # Documentation suite
-pisag.service         # systemd unit (for Pi deployment)
-install.sh            # Automated install script
+install.sh            # Linux/Pi automated install script
+install.ps1           # Windows automated install script
+build_windows.ps1     # Windows executable builder (PyInstaller)
+pisag.service         # systemd unit (for Linux/Pi deployment)
 ```
+
+## Windows Executable Package
+
+Build a standalone Windows executable that doesn't require Python installation:
+
+```powershell
+cd C:\pisag
+.\venv\Scripts\Activate.ps1
+.\build_windows.ps1
+# Output: dist/PISAG.exe
+```
+
+The executable includes:
+- All Python dependencies bundled
+- Web UI static files
+- Database migrations
+- Configuration files
+- Documentation
+
+Distribute the `dist/` folder as a portable application. Users only need HackRF drivers and SoapySDR installed.
+
+## Performance: Windows vs. Raspberry Pi
+
+**Windows machines offer significant advantages:**
+- ⚡ **Faster processors** (multi-core, higher clock speeds)
+- 💾 **More RAM** (8-32GB typical vs. 1-8GB on Pi)
+- 🔌 **Better USB** (USB 3.0/3.1 support, higher bandwidth)
+- 📡 **Higher sample rates** (better RF quality)
+- ⏱️ **Lower latency** (faster processing and transmission)
+
+This results in improved HackRF performance, transmission quality, and system responsiveness.
 
 ## Documentation
 - [Architecture](docs/ARCHITECTURE.md)
-- [Setup (Raspberry Pi)](docs/SETUP.md)
+- **[Setup - Windows](docs/SETUP_WINDOWS.md)** ⭐
+- **[Setup - Linux/Raspberry Pi](docs/SETUP.md)** ⭐
 - [Usage Guide](docs/USAGE.md)
 - [Troubleshooting](docs/TROUBLESHOOTING.md)
 - [POCSAG Protocol](docs/POCSAG.md)

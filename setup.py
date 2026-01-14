@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 setup(
     name='pisag',
     version='0.1.0',
-    description='POCSAG Pager Server for HackRF',
+    description='Cross-platform POCSAG Pager Server for HackRF (Windows, Linux, Raspberry Pi)',
     author='PISAG Project',
     packages=find_packages(),
     install_requires=[
@@ -24,4 +24,16 @@ setup(
             'pisag=pisag.app:main',
         ],
     },
+    classifiers=[
+        'Development Status :: 4 - Beta',
+        'Intended Audience :: Education',
+        'License :: OSI Approved :: MIT License',
+        'Operating System :: Microsoft :: Windows',
+        'Operating System :: POSIX :: Linux',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        'Topic :: Communications :: Ham Radio',
+    ],
 )

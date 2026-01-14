@@ -1,9 +1,12 @@
-# Setup (Raspberry Pi)
+# Setup (Linux / Raspberry Pi)
 
-Step-by-step installation for Raspberry Pi 3/4 with Raspberry Pi OS.
+Step-by-step installation for Linux (Ubuntu, Debian, etc.) and Raspberry Pi 3/4 with Raspberry Pi OS.
+
+> **Note:** For Windows setup, see [SETUP_WINDOWS.md](SETUP_WINDOWS.md)
 
 ## Prerequisites
-- Raspberry Pi 3 or newer running Raspberry Pi OS (Bullseye or newer)
+- Linux system (Ubuntu 20.04+, Debian 11+, Raspberry Pi OS Bullseye+, etc.)
+- Raspberry Pi 3 or newer (if using Raspberry Pi)
 - HackRF One connected via USB (powered hub recommended)
 - Internet access and basic Linux command-line familiarity
 
