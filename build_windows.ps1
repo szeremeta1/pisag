@@ -17,14 +17,16 @@ Write-Host "============================================" -ForegroundColor Cyan
 
 # Check if in virtual environment
 if (-not $env:VIRTUAL_ENV) {
-    Write-Warning "Not in virtual environment. Activating..."
+    Write-Warning "Not in virtual environment."
     $venvPath = Join-Path $PSScriptRoot "venv\Scripts\Activate.ps1"
     if (Test-Path $venvPath) {
-        & $venvPath
+        Write-Host "Please activate the virtual environment first:" -ForegroundColor Yellow
+        Write-Host "  .\venv\Scripts\Activate.ps1" -ForegroundColor White
+        Write-Host "Then run this script again." -ForegroundColor Yellow
     } else {
         Write-Error "Virtual environment not found. Run install.ps1 first."
-        exit 1
     }
+    exit 1
 }
 
 # Clean previous builds

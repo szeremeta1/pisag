@@ -119,14 +119,18 @@ if (Test-Path "requirements.txt") {
 
 # Install SoapySDR (if not already installed)
 Write-Host "`nChecking SoapySDR installation..." -ForegroundColor Yellow
+$soapyInstalled = $false
 try {
-    & python -c "import SoapySDR" 2>&1 | Out-Null
-    if ($LASTEXITCODE -eq 0) {
+    $testResult = & python -c "import SoapySDR; print('installed')" 2>&1
+    if ($testResult -match "installed") {
+        $soapyInstalled = $true
         Write-Host "SoapySDR Python module already installed" -ForegroundColor Green
-    } else {
-        throw "Not installed"
     }
 } catch {
+    # Module not installed
+}
+
+if (-not $soapyInstalled) {
     Write-Warning "SoapySDR Python module not found."
     Write-Host "Please install SoapySDR manually:" -ForegroundColor Yellow
     Write-Host "1. Download PothosSDR (includes SoapySDR) from:" -ForegroundColor Yellow
