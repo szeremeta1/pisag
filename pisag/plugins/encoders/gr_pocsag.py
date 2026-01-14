@@ -33,7 +33,10 @@ class GrPocsagEncoder(POCSAGEncoder):
             )
         self.use_subprocess = bool(self.gr_cfg.get("use_subprocess", True))
         self.handles_transmit = True
-        self.python_bin = os.getenv("PISAG_PYTHON", "python3")  # override interpreter if needed
+        # Use 'python' on Windows, 'python3' elsewhere
+        import sys
+        default_python = "python" if sys.platform == "win32" else "python3"
+        self.python_bin = os.getenv("PISAG_PYTHON", default_python)
         env_dry = os.getenv("PISAG_GR_POCSAG_DRY_RUN")
         self.dry_run = bool(self.gr_cfg.get("dry_run", False))
         if env_dry is not None:
