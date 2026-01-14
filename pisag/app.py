@@ -16,6 +16,7 @@ from flask_socketio import SocketIO
 from pisag.config import get_config
 from pisag.utils.database import init_app_db
 from pisag.utils.logging import get_logger
+from pisag.utils.platform import is_windows
 from pisag.api.routes import api_blueprint
 from pisag.api.socketio import register_socketio
 from pisag.api.health import health_blueprint
@@ -149,8 +150,12 @@ def create_app(config_path: str = "config.json") -> Flask:
             pass
         logger.info("Shutdown complete")
 
-    signal.signal(signal.SIGTERM, shutdown_handler)
+    # Register signal handlers (SIGTERM not available on Windows)
+    if hasattr(signal, 'SIGTERM'):
+        signal.signal(signal.SIGTERM, shutdown_handler)
     signal.signal(signal.SIGINT, shutdown_handler)
+    if is_windows() and hasattr(signal, 'SIGBREAK'):
+        signal.signal(signal.SIGBREAK, shutdown_handler)
     atexit.register(shutdown_handler)
 
     return app
