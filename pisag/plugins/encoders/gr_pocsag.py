@@ -143,8 +143,8 @@ class GrPocsagEncoder(POCSAGEncoder):
         if not isinstance(ric, str) or not ric.isdigit() or not (1 <= len(ric) <= 7):
             raise ValueError("RIC must be a digit string of length 1-7")
         ric_val = int(ric)
-        if ric_val < 0 or ric_val > 2_097_151:
-            raise ValueError("RIC out of range (0-2,097,151)")
+        if ric_val <= 0 or ric_val > 2_097_151:
+            raise ValueError("RIC out of range (1-2,097,151)")
         if message_type not in {"alphanumeric", "numeric"}:
             raise ValueError("message_type must be 'alphanumeric' or 'numeric'")
         if baud_rate not in SUPPORTED_POCSAG_BAUD:
