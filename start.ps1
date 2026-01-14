@@ -27,6 +27,17 @@ Write-Host "`nActivating virtual environment..." -ForegroundColor Yellow
 Push-Location $ScriptDir
 
 Write-Host "`nStarting application..." -ForegroundColor Yellow
+
+# Verify Python is available
+$pythonExe = Join-Path $ScriptDir "venv\Scripts\python.exe"
+if (-not (Test-Path $pythonExe)) {
+    Write-Error "Python executable not found at: $pythonExe"
+    Write-Host "Virtual environment may be corrupted. Try running install.ps1 again." -ForegroundColor Yellow
+    Pop-Location
+    pause
+    exit 1
+}
+
 Write-Host "Web UI will be available at: http://localhost:5000" -ForegroundColor Green
 Write-Host "Press Ctrl+C to stop the server" -ForegroundColor Yellow
 Write-Host ""

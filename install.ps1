@@ -200,11 +200,40 @@ New-Item -ItemType Directory -Force -Path $logsDir | Out-Null
 $startScript = Join-Path $InstallDir "start.ps1"
 @"
 # Start PISAG
-`$venvActivate = Join-Path `$PSScriptRoot "venv\Scripts\Activate.ps1"
+`$ErrorActionPreference = "Stop"
+`$ScriptDir = Split-Path -Parent `$MyInvocation.MyCommand.Path
+`$venvActivate = Join-Path `$ScriptDir "venv\Scripts\Activate.ps1"
+
+Write-Host "Starting PISAG POCSAG Pager Server..." -ForegroundColor Cyan
+
+if (-not (Test-Path `$venvActivate)) {
+    Write-Error "Virtual environment not found. Please run install.ps1 first."
+    pause
+    exit 1
+}
+
 & `$venvActivate
-Push-Location `$PSScriptRoot
-& python -m pisag.app
-Pop-Location
+Push-Location `$ScriptDir
+
+`$pythonExe = Join-Path `$ScriptDir "venv\Scripts\python.exe"
+if (-not (Test-Path `$pythonExe)) {
+    Write-Error "Python executable not found. Virtual environment may be corrupted."
+    Pop-Location
+    pause
+    exit 1
+}
+
+Write-Host "Web UI: http://localhost:5000" -ForegroundColor Green
+Write-Host "Press Ctrl+C to stop" -ForegroundColor Yellow
+Write-Host ""
+
+try {
+    & python -m pisag.app
+} catch {
+    Write-Error "Failed to start: `$_"
+} finally {
+    Pop-Location
+}
 "@ | Set-Content $startScript
 
 # Create startup batch file for convenience
